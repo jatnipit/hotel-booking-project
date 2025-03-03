@@ -1,5 +1,6 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
+import 'package:project/app_colors.dart';
 import 'package:project/authen/login_page.dart';
 
 void main() async {
@@ -24,9 +25,28 @@ class _MyAppState extends State<MyApp> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Center(child: Text('Firebase Authentication Example')),
+        title: Center(
+            child: Text(
+          'Firebase Authentication Example',
+          style: TextStyle(
+            color: Colors.white,
+          ),
+        )),
+        backgroundColor: AppColors.primary,
       ),
-      body: Center(child: Text('Welcome')),
+      body: Center(
+          child: Text(
+        'Welcome!!',
+        style: TextStyle(fontSize: 30, fontWeight: FontWeight.bold),
+      )),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () {
+          Navigator.push(
+              context, MaterialPageRoute(builder: (context) => LoginPage()));
+        },
+        label: Text('Login', style: TextStyle(color: Colors.white)),
+        backgroundColor: AppColors.primary,
+      ),
     );
   }
 }

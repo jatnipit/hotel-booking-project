@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:project/app_colors.dart';
 
 import 'forgot_password_page.dart';
 import 'register_page.dart';
@@ -64,131 +65,156 @@ class _LoginPageState extends State<LoginPage> {
 
   @override
   Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      child: Padding(
-        padding: const EdgeInsets.all(20.0),
-        child: Column(
-          children: [
-            Center(
-              child: Container(
-                width: 200,
-                height: 200,
-                margin: const EdgeInsets.only(top: 30, bottom: 10),
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: Colors.grey[100],
-                  shape: BoxShape.circle,
+    return Scaffold(
+      appBar: AppBar(),
+      body: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.all(20.0),
+          child: Column(
+            children: [
+              Center(
+                child: Container(
+                  width: 200,
+                  height: 200,
+                  margin: const EdgeInsets.only(top: 30, bottom: 10),
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: AppColors.loginIcon,
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(Icons.person,
+                      size: 150, color: AppColors.primary),
                 ),
-                child: const Icon(Icons.person,
-                    size: 150, color: Color.fromRGBO(95, 141, 78, 0.5)),
               ),
-            ),
-            const SizedBox(height: 15),
-            Form(
-              key: _formKey,
-              child: Column(
-                children: [
-                  TextFormField(
-                    controller: emailController,
-                    keyboardType: TextInputType.emailAddress,
-                    decoration: const InputDecoration(
-                      icon: Icon(Icons.mail),
-                      labelText: 'Email',
+              const SizedBox(height: 15),
+              Form(
+                key: _formKey,
+                child: Column(
+                  children: [
+                    TextFormField(
+                      controller: emailController,
+                      keyboardType: TextInputType.emailAddress,
+                      decoration: const InputDecoration(
+                        icon: Icon(Icons.mail),
+                        labelText: 'Email',
+                      ),
+                      validator: (value) => value == null || value.isEmpty
+                          ? 'กรุณากรอก email'
+                          : null,
                     ),
-                    validator: (value) => value == null || value.isEmpty
-                        ? 'กรุณากรอก email'
-                        : null,
-                  ),
-                  TextFormField(
-                    controller: passwordController,
-                    obscureText: true,
-                    decoration: const InputDecoration(
-                      icon: Icon(Icons.lock),
-                      labelText: 'Password',
+                    TextFormField(
+                      controller: passwordController,
+                      obscureText: true,
+                      decoration: const InputDecoration(
+                        icon: Icon(Icons.lock),
+                        labelText: 'Password',
+                      ),
+                      validator: (value) => value == null || value.isEmpty
+                          ? 'กรุณากรอกรหัสผ่าน'
+                          : null,
                     ),
-                    validator: (value) => value == null || value.isEmpty
-                        ? 'กรุณากรอกรหัสผ่าน'
-                        : null,
-                  ),
-                  const SizedBox(height: 10),
-                  Align(
-                    alignment: Alignment.centerRight,
-                    child: GestureDetector(
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => const ForgotPasswordPage(),
-                          ),
-                        );
-                      },
-                      child: const Text(
-                        'Forgot Password?',
-                        style: TextStyle(color: Colors.blue),
+                    const SizedBox(height: 10),
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: GestureDetector(
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const ForgotPasswordPage(),
+                            ),
+                          );
+                        },
+                        child: const Text(
+                          'Forgot Password?',
+                          style: TextStyle(color: AppColors.primary),
+                        ),
                       ),
                     ),
-                  ),
-                  const SizedBox(height: 20),
-                  ElevatedButton(
-                    onPressed: signUserIn,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color.fromRGBO(164, 190, 123, 1),
+                    const SizedBox(height: 20),
+                    ElevatedButton(
+                      onPressed: signUserIn,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primary,
+                      ),
+                      child: const Text(
+                        'Login',
+                        style: TextStyle(color: Colors.white),
+                      ),
                     ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 40),
+              const Text('Or continue with'),
+              const SizedBox(height: 15),
+              // Row(
+              //   mainAxisAlignment: MainAxisAlignment.center,
+              //   children: [
+              //     GestureDetector(
+              //       onTap: signInWithGoogle,
+              //       child: CircleAvatar(
+              //         radius: 20,
+              //         backgroundColor: AppColors.loginIcon,
+              //         child: Image.asset(
+              //           'assets/logo/google_logo.png',
+              //           height: 20,
+              //         ),
+              //       ),
+              //     ),
+              //   ],
+              // ),
+
+              SizedBox(
+                width: 220,
+                child: ElevatedButton(
+                    onPressed: () {},
+                    style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.loginIcon,
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(5)),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 10, vertical: 8)),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Image.asset(
+                          'assets/logo/google_logo.png',
+                          height: 25,
+                        ),
+                        const SizedBox(width: 10),
+                        Text(
+                          'Sign in with Google',
+                          style: TextStyle(
+                            color: AppColors.primary,
+                          ),
+                        ),
+                      ],
+                    )),
+              ),
+              const SizedBox(height: 20),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Text('Not a member?'),
+                  TextButton(
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const RegisterPage(),
+                        ),
+                      );
+                    },
                     child: const Text(
-                      'Login',
-                      style: TextStyle(color: Colors.white),
+                      'Register now',
+                      style: TextStyle(color: AppColors.primary),
                     ),
                   ),
                 ],
-              ),
-            ),
-            const SizedBox(height: 40),
-            const Text('Or continue with'),
-            const SizedBox(height: 15),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                GestureDetector(
-                  onTap: signInWithGoogle,
-                  child: const CircleAvatar(
-                    radius: 20,
-                    backgroundColor: Color.fromRGBO(229, 217, 182, 1),
-                    child: Icon(Icons.mail_outline, color: Colors.white),
-                  ),
-                ),
-                const SizedBox(width: 10),
-                const CircleAvatar(
-                  radius: 20,
-                  backgroundColor: Color.fromRGBO(229, 217, 182, 1),
-                  child: Icon(Icons.facebook, color: Colors.white),
-                ),
-                const SizedBox(width: 10),
-                const CircleAvatar(
-                  radius: 20,
-                  backgroundColor: Color.fromRGBO(229, 217, 182, 1),
-                  child: Icon(Icons.apple, color: Colors.white),
-                ),
-              ],
-            ),
-            const SizedBox(height: 20),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Text('Not a member?'),
-                TextButton(
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const RegisterPage(),
-                      ),
-                    );
-                  },
-                  child: const Text('Register now'),
-                ),
-              ],
-            )
-          ],
+              )
+            ],
+          ),
         ),
       ),
     );
