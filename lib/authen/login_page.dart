@@ -168,7 +168,9 @@ class _LoginPageState extends State<LoginPage> {
               SizedBox(
                 width: 220,
                 child: ElevatedButton(
-                    onPressed: () {},
+                    onPressed: () {
+                      signInWithGoogle();
+                    },
                     style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.loginIcon,
                         shape: RoundedRectangleBorder(
