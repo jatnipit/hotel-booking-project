@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:project/app_colors.dart';
 
 class ReserveHistory extends StatefulWidget {
   const ReserveHistory({super.key});
@@ -10,9 +11,6 @@ class ReserveHistory extends StatefulWidget {
 class _ReserveHistoryState extends State<ReserveHistory> {
   @override
   Widget build(BuildContext context) {
-    return Container(
-      color: Colors.amber,
-      child: Text('This is History Screen'),
-    );
+    return Scaffold();
   }
 }

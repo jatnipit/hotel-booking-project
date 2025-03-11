@@ -18,23 +18,25 @@ class _LoginPageState extends State<LoginPage> {
   final emailController = TextEditingController();
   final passwordController = TextEditingController();
 
-  Future<void> signInWithGoogle() async {
+  Future<UserCredential> signInWithGoogle() async {
     try {
       final GoogleSignInAccount? googleUser = await GoogleSignIn().signIn();
-      if (googleUser == null) return;
 
-      final GoogleSignInAuthentication googleAuth =
-          await googleUser.authentication;
+      // Obtain the auth details from the request
+      final GoogleSignInAuthentication? googleAuth =
+          await googleUser?.authentication;
 
-      final AuthCredential credential = GoogleAuthProvider.credential(
-        accessToken: googleAuth.accessToken,
-        idToken: googleAuth.idToken,
+      // Create a new credential
+      final credential = GoogleAuthProvider.credential(
+        accessToken: googleAuth?.accessToken,
+        idToken: googleAuth?.idToken,
       );
 
-      await FirebaseAuth.instance.signInWithCredential(credential);
+      return await FirebaseAuth.instance.signInWithCredential(credential);
     } catch (e) {
       ScaffoldMessenger.of(context)
           .showSnackBar(SnackBar(content: Text('Google Sign-In failed.')));
+      throw Exception("Google Sign-In failed: $e");
     }
   }
 
@@ -148,23 +150,6 @@ class _LoginPageState extends State<LoginPage> {
               const SizedBox(height: 40),
               const Text('Or continue with'),
               const SizedBox(height: 15),
-              // Row(
-              //   mainAxisAlignment: MainAxisAlignment.center,
-              //   children: [
-              //     GestureDetector(
-              //       onTap: signInWithGoogle,
-              //       child: CircleAvatar(
-              //         radius: 20,
-              //         backgroundColor: AppColors.loginIcon,
-              //         child: Image.asset(
-              //           'assets/logo/google_logo.png',
-              //           height: 20,
-              //         ),
-              //       ),
-              //     ),
-              //   ],
-              // ),
-
               SizedBox(
                 width: 220,
                 child: ElevatedButton(

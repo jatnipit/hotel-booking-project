@@ -1,3 +1,4 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:project/app_colors.dart';
@@ -11,7 +12,7 @@ void main() async {
   await Firebase.initializeApp();
 
   runApp(MaterialApp(
-    debugShowCheckedModeBanner: false, // Remove this line when debugging
+    debugShowCheckedModeBanner: false,
     home: MyApp(),
   ));
 }
@@ -27,54 +28,69 @@ class _MyAppState extends State<MyApp> {
   int screenIndex = 0;
   final screens = [HomeScreen(), ReserveHistory(), UserProfileScreen()];
 
+  List<String> get titles => [
+        'ชื่อโปรเจคเจ๋งๆ',
+        'Trip',
+        'Hello, ${FirebaseAuth.instance.currentUser?.email ?? 'Guest'}'
+      ];
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-        appBar: AppBar(
-          title: Center(
+    return StreamBuilder<User?>(
+      stream: FirebaseAuth.instance.authStateChanges(),
+      builder: (context, snapshot) {
+        // Rebuilds whenever the auth state changes
+        return Scaffold(
+          appBar: AppBar(
+            leading: screenIndex == 2
+                ? Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: CircleAvatar(
+                      backgroundImage:
+                          FirebaseAuth.instance.currentUser?.photoURL != null
+                              ? NetworkImage(
+                                  FirebaseAuth.instance.currentUser!.photoURL!)
+                              : null,
+                      child: FirebaseAuth.instance.currentUser?.photoURL == null
+                          ? const Icon(Icons.person)
+                          : null,
+                    ),
+                  )
+                : const SizedBox(width: 15),
+            title: Center(
               child: Text(
-            'ชื่อโปรเจคเจ๋งๆ',
-            style: TextStyle(
-              color: Colors.white,
+                titles[screenIndex],
+                style: const TextStyle(color: Colors.white),
+              ),
             ),
-          )),
-          leading: const SizedBox(
-            width: 15,
+            actions: const [
+              Icon(Icons.notifications_outlined, color: Colors.white),
+              SizedBox(width: 15),
+            ],
+            backgroundColor: AppColors.primary,
           ),
-          actions: const [
-            Icon(
-              Icons.notifications_outlined,
-              color: Colors.white,
+          body: screens[screenIndex],
+          bottomNavigationBar: Container(
+            height: 70,
+            decoration: const BoxDecoration(
+              borderRadius: BorderRadius.only(
+                topLeft: Radius.circular(25),
+                topRight: Radius.circular(25),
+              ),
+              color: AppColors.primary,
             ),
-            SizedBox(
-              width: 15,
-            )
-          ],
-          backgroundColor: AppColors.primary,
-        ),
-        // Body
-        body: screens[screenIndex],
-        // Bottom Navigation Bar
-        bottomNavigationBar: Container(
-          height: 70,
-          decoration: const BoxDecoration(
-            borderRadius: BorderRadius.only(
-              topLeft: Radius.circular(25),
-              topRight: Radius.circular(25),
-            ),
-            color: AppColors.primary,
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: [
-              GestureDetector(
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: [
+                GestureDetector(
                   onTap: () {
                     setState(() {
                       screenIndex = 0;
                     });
                   },
-                  child: Icon(Icons.home_outlined, color: Colors.white)),
-              GestureDetector(
+                  child: const Icon(Icons.home_outlined, color: Colors.white),
+                ),
+                GestureDetector(
                   onTap: () {
                     setState(() {
                       screenIndex = 1;
@@ -84,16 +100,21 @@ class _MyAppState extends State<MyApp> {
                     'assets/logo/trip.png',
                     color: Colors.white,
                     height: 25,
-                  )),
-              GestureDetector(
+                  ),
+                ),
+                GestureDetector(
                   onTap: () {
                     setState(() {
                       screenIndex = 2;
                     });
                   },
-                  child: Icon(Icons.person_outline, color: Colors.white)),
-            ],
+                  child: const Icon(Icons.person_outline, color: Colors.white),
+                ),
+              ],
+            ),
           ),
-        ));
+        );
+      },
+    );
   }
 }
