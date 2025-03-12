@@ -70,6 +70,7 @@ class _MyAppState extends State<MyApp> {
             backgroundColor: AppColors.primary,
           ),
           body: screens[screenIndex],
+          backgroundColor: Colors.white,
           bottomNavigationBar: Container(
             height: 70,
             decoration: const BoxDecoration(

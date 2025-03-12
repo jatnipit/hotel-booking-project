@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:project/app_colors.dart';
+import 'package:project/main.dart'; // Import MyApp here
+import 'package:project/authen/login_page.dart';
 
 class RegisterPage extends StatefulWidget {
   const RegisterPage({super.key});
@@ -18,12 +21,11 @@ class _RegisterPageState extends State<RegisterPage> {
   Future<void> signUserUp() async {
     if (!_formKey.currentState!.validate()) return;
 
+    // Show a loading dialog
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (context) {
-        return const Center(child: CircularProgressIndicator());
-      },
+      builder: (context) => const Center(child: CircularProgressIndicator()),
     );
 
     try {
@@ -47,14 +49,19 @@ class _RegisterPageState extends State<RegisterPage> {
         return;
       }
 
+      // Create user with email and password (this automatically signs in the user)
       await FirebaseAuth.instance.createUserWithEmailAndPassword(
         email: emailController.text.trim(),
         password: passwordController.text.trim(),
       );
 
       if (mounted) {
-        Navigator.pop(context); // Close loading dialog
-        Navigator.pop(context); // Go back after successful sign-up
+        Navigator.pop(context); // Dismiss the loading dialog
+        // Navigate to MyApp, which will show the home screen if user is signed in
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const MyApp()),
+        );
       }
     } on FirebaseAuthException catch (e) {
       if (mounted) {
@@ -80,10 +87,12 @@ class _RegisterPageState extends State<RegisterPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        iconTheme: IconThemeData(color: Colors.white),
+        iconTheme: const IconThemeData(color: Colors.white),
         title: const Center(
-          child:
-              Text('Example Firebase', style: TextStyle(color: Colors.white)),
+          child: Text(
+            'Example Firebase',
+            style: TextStyle(color: Colors.white),
+          ),
         ),
         actions: const [Icon(Icons.help, color: Colors.white)],
         backgroundColor: const Color.fromRGBO(40, 84, 48, 1),
@@ -116,7 +125,7 @@ class _RegisterPageState extends State<RegisterPage> {
                         if (value == null || value.isEmpty) {
                           return 'กรุณากรอก email';
                         }
-                        return null; // ✅ Fix: Return null when input is valid
+                        return null; // Input is valid
                       },
                     ),
                     const SizedBox(height: 15),

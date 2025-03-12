@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:project/app_colors.dart';
+import 'package:project/main.dart';
+import 'package:project/screens/home_screen.dart';
 
 import 'forgot_password_page.dart';
 import 'register_page.dart';
@@ -31,8 +33,15 @@ class _LoginPageState extends State<LoginPage> {
         accessToken: googleAuth?.accessToken,
         idToken: googleAuth?.idToken,
       );
-
-      return await FirebaseAuth.instance.signInWithCredential(credential);
+      final result =
+          await FirebaseAuth.instance.signInWithCredential(credential);
+      if (mounted) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const MyApp()),
+        );
+      }
+      return result;
     } catch (e) {
       ScaffoldMessenger.of(context)
           .showSnackBar(SnackBar(content: Text('Google Sign-In failed.')));
@@ -54,7 +63,14 @@ class _LoginPageState extends State<LoginPage> {
         email: emailController.text.trim(),
         password: passwordController.text.trim(),
       );
-      if (mounted) Navigator.pop(context);
+      if (mounted) {
+        Navigator.pop(context); // Dismiss the loading dialog
+        // Navigate to MyApp (which will show HomeScreen if logged in)
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const MyApp()),
+        );
+      }
     } on FirebaseAuthException catch (e) {
       if (mounted) {
         Navigator.pop(context);

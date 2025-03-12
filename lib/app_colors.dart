@@ -4,4 +4,5 @@ class AppColors {
   static const Color primary = Color(0xff3D8D7A);
   static const Color secondary = Color(0xffA3D1C6);
   static const Color loginIcon = Color(0xffB3D8A8);
+  static const Color appBackground = Color.fromARGB(255, 234, 234, 234);
 }
