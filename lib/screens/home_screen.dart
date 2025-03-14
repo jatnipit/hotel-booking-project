@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'details.dart';
+import 'package:project/authen/login_page.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -11,10 +12,13 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  void signOut(BuildContext context) async {
-    await FirebaseAuth.instance.signOut();
-    Navigator.pop(context);
-  }
+void signOut(BuildContext context) async {
+  await FirebaseAuth.instance.signOut();
+  Navigator.pushReplacement(
+    context,
+    MaterialPageRoute(builder: (context) => const LoginPage()), // เปลี่ยนไปหน้า LoginPage
+  );
+}
 
   Future<QuerySnapshot> fetchAllRoomsData() async {
     return await FirebaseFirestore.instance.collection('hotels').get();
@@ -23,7 +27,15 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Home Page')),
+      appBar: AppBar(
+        title: const Text('Home Page'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.logout),
+            onPressed: () => signOut(context), // เมื่อคลิกปุ่มล็อกเอาท์
+          ),
+        ],
+      ),
       body: FutureBuilder<QuerySnapshot>(
         future: fetchAllRoomsData(),
         builder: (context, snapshot) {
@@ -82,7 +94,9 @@ class _HomeScreenState extends State<HomeScreen> {
                                 const SizedBox(height: 10),
                                 Text(' Location : ${roomData['location'] ?? 'ไม่ระบุ'}'),
                                 const SizedBox(height: 10),
-                                Text(' Price/Night : ${roomData['pricePerNight'] ?? 'ไม่ระบุ'} ฿',style: TextStyle(color: Colors.green),),
+                                Text(' Price/Night : ${roomData['pricePerNight'] ?? 'ไม่ระบุ'} ฿',
+                                  style: TextStyle(color: Colors.green),
+                                ),
                               ],
                             ),
                           ),
