@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:project/materials/app_colors.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:project/main.dart'; // Import MyApp here
-import 'package:project/authen/login_page.dart';
 
 class RegisterPage extends StatefulWidget {
   const RegisterPage({super.key});
@@ -14,6 +13,8 @@ class RegisterPage extends StatefulWidget {
 class _RegisterPageState extends State<RegisterPage> {
   final _formKey = GlobalKey<FormState>();
 
+  final firstNameController = TextEditingController();
+  final lastNameController = TextEditingController();
   final emailController = TextEditingController();
   final passwordController = TextEditingController();
   final confirmPasswordController = TextEditingController();
@@ -21,7 +22,6 @@ class _RegisterPageState extends State<RegisterPage> {
   Future<void> signUserUp() async {
     if (!_formKey.currentState!.validate()) return;
 
-    // Show a loading dialog
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -31,7 +31,7 @@ class _RegisterPageState extends State<RegisterPage> {
     try {
       if (passwordController.text != confirmPasswordController.text) {
         if (mounted) {
-          Navigator.pop(context); // Close loading dialog
+          Navigator.pop(context);
           showDialog(
             context: context,
             builder: (context) => AlertDialog(
@@ -49,15 +49,22 @@ class _RegisterPageState extends State<RegisterPage> {
         return;
       }
 
-      // Create user with email and password (this automatically signs in the user)
       await FirebaseAuth.instance.createUserWithEmailAndPassword(
         email: emailController.text.trim(),
         password: passwordController.text.trim(),
       );
 
+      String uid = FirebaseAuth.instance.currentUser!.uid;
+      String name =
+          '${firstNameController.text.trim()} ${lastNameController.text.trim()}';
+
+      await FirebaseFirestore.instance.collection('users').doc(uid).set({
+        'name': name,
+        'email': emailController.text.trim(),
+      });
+
       if (mounted) {
-        Navigator.pop(context); // Dismiss the loading dialog
-        // Navigate to MyApp, which will show the home screen if user is signed in
+        Navigator.pop(context);
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (context) => const MyApp()),
@@ -65,7 +72,7 @@ class _RegisterPageState extends State<RegisterPage> {
       }
     } on FirebaseAuthException catch (e) {
       if (mounted) {
-        Navigator.pop(context); // Close loading dialog
+        Navigator.pop(context);
         showDialog(
           context: context,
           builder: (context) => AlertDialog(
@@ -80,7 +87,34 @@ class _RegisterPageState extends State<RegisterPage> {
           ),
         );
       }
+    } on FirebaseException catch (e) {
+      if (mounted) {
+        Navigator.pop(context);
+        showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('Error'),
+            content: Text('Failed to save user data: ${e.message}'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('OK'),
+              ),
+            ],
+          ),
+        );
+      }
     }
+  }
+
+  @override
+  void dispose() {
+    firstNameController.dispose();
+    lastNameController.dispose();
+    emailController.dispose();
+    passwordController.dispose();
+    confirmPasswordController.dispose();
+    super.dispose();
   }
 
   @override
@@ -115,6 +149,34 @@ class _RegisterPageState extends State<RegisterPage> {
                 child: Column(
                   children: [
                     TextFormField(
+                      controller: firstNameController,
+                      decoration: const InputDecoration(
+                        border: OutlineInputBorder(),
+                        labelText: 'First Name',
+                      ),
+                      validator: (value) {
+                        if (value == null || value.trim().isEmpty) {
+                          return 'Enter your first name';
+                        }
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 15),
+                    TextFormField(
+                      controller: lastNameController,
+                      decoration: const InputDecoration(
+                        border: OutlineInputBorder(),
+                        labelText: 'Last Name',
+                      ),
+                      validator: (value) {
+                        if (value == null || value.trim().isEmpty) {
+                          return 'Please enter your last name';
+                        }
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 15),
+                    TextFormField(
                       controller: emailController,
                       autofocus: true,
                       decoration: const InputDecoration(
@@ -123,9 +185,9 @@ class _RegisterPageState extends State<RegisterPage> {
                       ),
                       validator: (value) {
                         if (value == null || value.isEmpty) {
-                          return 'กรุณากรอก email';
+                          return 'Please enter email';
                         }
-                        return null; // Input is valid
+                        return null;
                       },
                     ),
                     const SizedBox(height: 15),
@@ -138,7 +200,7 @@ class _RegisterPageState extends State<RegisterPage> {
                       ),
                       validator: (value) {
                         if (value == null || value.isEmpty) {
-                          return 'กรุณากรอกรหัสผ่าน';
+                          return 'Please enter password';
                         }
                         return null;
                       },
@@ -153,7 +215,7 @@ class _RegisterPageState extends State<RegisterPage> {
                       ),
                       validator: (value) {
                         if (value == null || value.isEmpty) {
-                          return 'กรุณากรอกรหัสยืนยัน';
+                          return 'Please enter confirm password';
                         }
                         return null;
                       },

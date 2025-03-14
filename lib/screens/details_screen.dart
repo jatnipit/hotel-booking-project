@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+// import 'package:firebase_core/firebase_core.dart';
 
 class DetailScreen extends StatefulWidget {
   final Map<String, dynamic> roomData;
@@ -9,7 +10,7 @@ class DetailScreen extends StatefulWidget {
   const DetailScreen({super.key, required this.roomData});
 
   @override
-  _DetailScreenState createState() => _DetailScreenState();
+  State<DetailScreen> createState() => _DetailScreenState();
 }
 
 class _DetailScreenState extends State<DetailScreen> {
@@ -24,7 +25,8 @@ class _DetailScreenState extends State<DetailScreen> {
 
   Future<void> _selectDate(BuildContext context, bool isCheckIn) async {
     DateTime today = DateTime.now();
-    DateTime initialDate = isCheckIn ? today : (checkInDate ?? today).add(const Duration(days: 1));
+    DateTime initialDate =
+        isCheckIn ? today : (checkInDate ?? today).add(const Duration(days: 1));
 
     final DateTime? picked = await showDatePicker(
       context: context,
@@ -41,7 +43,8 @@ class _DetailScreenState extends State<DetailScreen> {
         } else {
           if (picked.isBefore(checkInDate ?? today)) {
             ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Check-out date must be after check-in date.')),
+              const SnackBar(
+                  content: Text('Check-out date must be after check-in date.')),
             );
             return;
           }
@@ -50,10 +53,12 @@ class _DetailScreenState extends State<DetailScreen> {
       });
     }
   }
+
   void _bookNow() {
     if (checkInDate == null || checkOutDate == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please select check-in and check-out dates.')),
+        const SnackBar(
+            content: Text('Please select check-in and check-out dates.')),
       );
       return;
     }
@@ -63,10 +68,10 @@ class _DetailScreenState extends State<DetailScreen> {
         return AlertDialog(
           title: const Text('Information for booking'),
           content: UserInfoForm(
-            onSubmit: (String name, String surname, String phone, String email) {
-          
+            onSubmit:
+                (String name, String surname, String phone, String email) {
               _saveToFirebase(name, surname, phone, email);
-              Navigator.of(context).pop(); 
+              Navigator.of(context).pop();
             },
           ),
         );
@@ -74,7 +79,8 @@ class _DetailScreenState extends State<DetailScreen> {
     );
   }
 
-  Future<void> _saveToFirebase(String name, String surname, String phone, String email) async {
+  Future<void> _saveToFirebase(
+      String name, String surname, String phone, String email) async {
     try {
       await FirebaseFirestore.instance.collection('bookings').add({
         'name': name,
@@ -98,7 +104,8 @@ class _DetailScreenState extends State<DetailScreen> {
 
   @override
   Widget build(BuildContext context) {
-    List<String> imageUrls = List<String>.from(widget.roomData['roomImages'] ?? []);
+    List<String> imageUrls =
+        List<String>.from(widget.roomData['roomImages'] ?? []);
 
     return Scaffold(
       appBar: AppBar(title: Text(widget.roomData['name'] ?? 'Room Details')),
@@ -111,7 +118,9 @@ class _DetailScreenState extends State<DetailScreen> {
                 ? Container(
                     height: 200,
                     color: Colors.grey.shade300,
-                    child: const Center(child: Icon(Icons.image, color: Colors.white, size: 50)),
+                    child: const Center(
+                        child:
+                            Icon(Icons.image, color: Colors.white, size: 50)),
                   )
                 : Stack(
                     alignment: Alignment.center,
@@ -137,7 +146,8 @@ class _DetailScreenState extends State<DetailScreen> {
                       Positioned(
                         left: 10,
                         child: IconButton(
-                          icon: const Icon(Icons.arrow_back, color: Colors.white),
+                          icon:
+                              const Icon(Icons.arrow_back, color: Colors.white),
                           onPressed: () {
                             if (_pageController.hasClients) {
                               _pageController.previousPage(
@@ -151,7 +161,8 @@ class _DetailScreenState extends State<DetailScreen> {
                       Positioned(
                         right: 10,
                         child: IconButton(
-                          icon: const Icon(Icons.arrow_forward, color: Colors.white),
+                          icon: const Icon(Icons.arrow_forward,
+                              color: Colors.white),
                           onPressed: () {
                             if (_pageController.hasClients) {
                               _pageController.nextPage(
@@ -172,7 +183,9 @@ class _DetailScreenState extends State<DetailScreen> {
             const SizedBox(height: 10),
             Text('Location: ${widget.roomData['location'] ?? 'Unknown'}'),
             const SizedBox(height: 10),
-            Text('Price/Night: ${widget.roomData['pricePerNight'] ?? 'Unknown'} ฿', style: TextStyle(color: Colors.green)),
+            Text(
+                'Price/Night: ${widget.roomData['pricePerNight'] ?? 'Unknown'} ฿',
+                style: TextStyle(color: Colors.green)),
             const SizedBox(height: 10),
             Text('Facilities: ${widget.roomData['Facilities'] ?? 'Unknown'}'),
             const SizedBox(height: 20),
@@ -187,7 +200,9 @@ class _DetailScreenState extends State<DetailScreen> {
                       child: Text.rich(
                         TextSpan(
                           children: [
-                            TextSpan(text: 'Check-in : ', style: TextStyle(fontWeight: FontWeight.bold)),
+                            TextSpan(
+                                text: 'Check-in : ',
+                                style: TextStyle(fontWeight: FontWeight.bold)),
                             TextSpan(text: _formatDate(checkInDate)),
                           ],
                         ),
@@ -204,7 +219,9 @@ class _DetailScreenState extends State<DetailScreen> {
                       child: Text.rich(
                         TextSpan(
                           children: [
-                            TextSpan(text: 'Check-out : ', style: TextStyle(fontWeight: FontWeight.bold)),
+                            TextSpan(
+                                text: 'Check-out : ',
+                                style: TextStyle(fontWeight: FontWeight.bold)),
                             TextSpan(text: _formatDate(checkOutDate)),
                           ],
                         ),
@@ -228,7 +245,8 @@ class _DetailScreenState extends State<DetailScreen> {
                   children: const [
                     Icon(Icons.book_online_outlined, color: Colors.white),
                     SizedBox(width: 10),
-                    Text('Book', style: TextStyle(fontSize: 18, color: Colors.white)),
+                    Text('Book',
+                        style: TextStyle(fontSize: 18, color: Colors.white)),
                   ],
                 ),
               ),
@@ -241,7 +259,8 @@ class _DetailScreenState extends State<DetailScreen> {
 }
 
 class UserInfoForm extends StatefulWidget {
-  final Function(String name, String surname, String phone, String email) onSubmit;
+  final Function(String name, String surname, String phone, String email)
+      onSubmit;
 
   const UserInfoForm({super.key, required this.onSubmit});
 

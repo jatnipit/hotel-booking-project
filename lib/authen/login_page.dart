@@ -3,7 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:project/materials/app_colors.dart';
 import 'package:project/main.dart';
-import 'package:project/screens/home_screen.dart';
+// import 'package:project/screens/home_screen.dart';
 
 import 'forgot_password_page.dart';
 import 'register_page.dart';

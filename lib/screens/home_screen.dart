@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'details.dart';
+import 'details_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -23,7 +23,6 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Home Page')),
       body: FutureBuilder<QuerySnapshot>(
         future: fetchAllRoomsData(),
         builder: (context, snapshot) {
@@ -57,6 +56,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     );
                   },
                   child: Card(
+                    color: Colors.white,
                     elevation: 5,
                     margin: const EdgeInsets.only(bottom: 20),
                     shape: RoundedRectangleBorder(
@@ -80,9 +80,13 @@ class _HomeScreenState extends State<HomeScreen> {
                                   ),
                                 ),
                                 const SizedBox(height: 10),
-                                Text(' Location : ${roomData['location'] ?? 'ไม่ระบุ'}'),
+                                Text(
+                                    ' Location : ${roomData['location'] ?? 'ไม่ระบุ'}'),
                                 const SizedBox(height: 10),
-                                Text(' Price/Night : ${roomData['pricePerNight'] ?? 'ไม่ระบุ'} ฿',style: TextStyle(color: Colors.green),),
+                                Text(
+                                  ' Price/Night : ${roomData['pricePerNight'] ?? 'ไม่ระบุ'} ฿',
+                                  style: TextStyle(color: Colors.green),
+                                ),
                               ],
                             ),
                           ),
@@ -91,7 +95,8 @@ class _HomeScreenState extends State<HomeScreen> {
                             child: ClipRRect(
                               borderRadius: BorderRadius.circular(12),
                               child: Image.network(
-                                roomData['imageURL'] ?? 'https://via.placeholder.com/150',
+                                roomData['imageURL'] ??
+                                    'https://via.placeholder.com/150',
                                 width: 100,
                                 height: 100,
                                 fit: BoxFit.cover,
