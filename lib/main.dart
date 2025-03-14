@@ -33,7 +33,7 @@ class _MyAppState extends State<MyApp> {
   final screens = [HomeScreen(), ReserveHistory(), UserProfileScreen()];
 
   List<String> get titles => [
-        'ชื่อโปรเจคเจ๋งๆ',
+        '',
         'Trip',
         'Hello, ${FirebaseAuth.instance.currentUser?.email ?? 'Guest'}'
       ];

@@ -1,0 +1,2 @@
+D:/hotel-booking-project/android/app/.cxx/Debug/551m4m65/x86_64/CMakeFiles/edit_cache.dir
+D:/hotel-booking-project/android/app/.cxx/Debug/551m4m65/x86_64/CMakeFiles/rebuild_cache.dir

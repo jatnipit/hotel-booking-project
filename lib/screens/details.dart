@@ -1,0 +1,305 @@
+import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_core/firebase_core.dart';
+
+class DetailScreen extends StatefulWidget {
+  final Map<String, dynamic> roomData;
+
+  const DetailScreen({super.key, required this.roomData});
+
+  @override
+  _DetailScreenState createState() => _DetailScreenState();
+}
+
+class _DetailScreenState extends State<DetailScreen> {
+  final PageController _pageController = PageController();
+  DateTime? checkInDate;
+  DateTime? checkOutDate;
+
+  String _formatDate(DateTime? date) {
+    if (date == null) return 'Select date';
+    return DateFormat('dd/MM/yyyy').format(date);
+  }
+
+  Future<void> _selectDate(BuildContext context, bool isCheckIn) async {
+    DateTime today = DateTime.now();
+    DateTime initialDate = isCheckIn ? today : (checkInDate ?? today).add(const Duration(days: 1));
+
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: initialDate,
+      firstDate: today,
+      lastDate: today.add(const Duration(days: 365)),
+    );
+
+    if (picked != null) {
+      setState(() {
+        if (isCheckIn) {
+          checkInDate = picked;
+          checkOutDate = null;
+        } else {
+          if (picked.isBefore(checkInDate ?? today)) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Check-out date must be after check-in date.')),
+            );
+            return;
+          }
+          checkOutDate = picked;
+        }
+      });
+    }
+  }
+  void _bookNow() {
+    if (checkInDate == null || checkOutDate == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please select check-in and check-out dates.')),
+      );
+      return;
+    }
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Information for booking'),
+          content: UserInfoForm(
+            onSubmit: (String name, String surname, String phone, String email) {
+          
+              _saveToFirebase(name, surname, phone, email);
+              Navigator.of(context).pop(); 
+            },
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> _saveToFirebase(String name, String surname, String phone, String email) async {
+    try {
+      await FirebaseFirestore.instance.collection('bookings').add({
+        'name': name,
+        'surname': surname,
+        'phone': phone,
+        'email': email,
+        'checkInDate': checkInDate?.toString(),
+        'checkOutDate': checkOutDate?.toString(),
+        'roomName': widget.roomData['name'],
+        'pricePerNight': widget.roomData['pricePerNight'],
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Book success.')),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Error.')),
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    List<String> imageUrls = List<String>.from(widget.roomData['roomImages'] ?? []);
+
+    return Scaffold(
+      appBar: AppBar(title: Text(widget.roomData['name'] ?? 'Room Details')),
+      body: Padding(
+        padding: const EdgeInsets.all(20.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            imageUrls.isEmpty
+                ? Container(
+                    height: 200,
+                    color: Colors.grey.shade300,
+                    child: const Center(child: Icon(Icons.image, color: Colors.white, size: 50)),
+                  )
+                : Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      SizedBox(
+                        height: 200,
+                        child: PageView.builder(
+                          controller: _pageController,
+                          itemCount: imageUrls.length,
+                          itemBuilder: (context, index) {
+                            return ClipRRect(
+                              borderRadius: BorderRadius.circular(12),
+                              child: Image.network(
+                                imageUrls[index],
+                                width: double.infinity,
+                                height: 200,
+                                fit: BoxFit.cover,
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                      Positioned(
+                        left: 10,
+                        child: IconButton(
+                          icon: const Icon(Icons.arrow_back, color: Colors.white),
+                          onPressed: () {
+                            if (_pageController.hasClients) {
+                              _pageController.previousPage(
+                                duration: const Duration(milliseconds: 300),
+                                curve: Curves.easeInOut,
+                              );
+                            }
+                          },
+                        ),
+                      ),
+                      Positioned(
+                        right: 10,
+                        child: IconButton(
+                          icon: const Icon(Icons.arrow_forward, color: Colors.white),
+                          onPressed: () {
+                            if (_pageController.hasClients) {
+                              _pageController.nextPage(
+                                duration: const Duration(milliseconds: 300),
+                                curve: Curves.easeInOut,
+                              );
+                            }
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
+            const SizedBox(height: 20),
+            Text(
+              '${widget.roomData['name'] ?? 'Unknown'}',
+              style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 10),
+            Text('Location: ${widget.roomData['location'] ?? 'Unknown'}'),
+            const SizedBox(height: 10),
+            Text('Price/Night: ${widget.roomData['pricePerNight'] ?? 'Unknown'} ฿', style: TextStyle(color: Colors.green)),
+            const SizedBox(height: 10),
+            Text('Facilities: ${widget.roomData['Facilities'] ?? 'Unknown'}'),
+            const SizedBox(height: 20),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: () => _selectDate(context, true),
+                    child: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Text.rich(
+                        TextSpan(
+                          children: [
+                            TextSpan(text: 'Check-in : ', style: TextStyle(fontWeight: FontWeight.bold)),
+                            TextSpan(text: _formatDate(checkInDate)),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: () => _selectDate(context, false),
+                    child: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Text.rich(
+                        TextSpan(
+                          children: [
+                            TextSpan(text: 'Check-out : ', style: TextStyle(fontWeight: FontWeight.bold)),
+                            TextSpan(text: _formatDate(checkOutDate)),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 20),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: _bookNow,
+                style: ElevatedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 15),
+                  backgroundColor: Colors.green,
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: const [
+                    Icon(Icons.book_online_outlined, color: Colors.white),
+                    SizedBox(width: 10),
+                    Text('Book', style: TextStyle(fontSize: 18, color: Colors.white)),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class UserInfoForm extends StatefulWidget {
+  final Function(String name, String surname, String phone, String email) onSubmit;
+
+  const UserInfoForm({super.key, required this.onSubmit});
+
+  @override
+  _UserInfoFormState createState() => _UserInfoFormState();
+}
+
+class _UserInfoFormState extends State<UserInfoForm> {
+  final _nameController = TextEditingController();
+  final _surnameController = TextEditingController();
+  final _phoneController = TextEditingController();
+  final _emailController = TextEditingController();
+
+  void _submitForm() {
+    String name = _nameController.text.trim();
+    String surname = _surnameController.text.trim();
+    String phone = _phoneController.text.trim();
+    String email = _emailController.text.trim();
+
+    if (name.isEmpty || surname.isEmpty || phone.isEmpty || email.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please enter information .')),
+      );
+      return;
+    }
+
+    widget.onSubmit(name, surname, phone, email);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        TextField(
+          controller: _nameController,
+          decoration: const InputDecoration(labelText: 'Name'),
+        ),
+        TextField(
+          controller: _surnameController,
+          decoration: const InputDecoration(labelText: 'Surname'),
+        ),
+        TextField(
+          controller: _phoneController,
+          keyboardType: TextInputType.phone,
+          decoration: const InputDecoration(labelText: 'Tel'),
+        ),
+        TextField(
+          controller: _emailController,
+          keyboardType: TextInputType.emailAddress,
+          decoration: const InputDecoration(labelText: 'Email'),
+        ),
+        const SizedBox(height: 20),
+        ElevatedButton(
+          onPressed: _submitForm,
+          child: const Text('Confirm Book'),
+        ),
+      ],
+    );
+  }
+}
