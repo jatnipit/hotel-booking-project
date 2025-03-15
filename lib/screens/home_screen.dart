@@ -28,15 +28,6 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Home Page'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.logout),
-            onPressed: () => signOut(context), // เมื่อคลิกปุ่มล็อกเอาท์
-          ),
-        ],
-      ),
       body: FutureBuilder<QuerySnapshot>(
         future: fetchAllRoomsData(),
         builder: (context, snapshot) {
