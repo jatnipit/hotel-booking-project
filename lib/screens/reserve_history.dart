@@ -1,29 +1,25 @@
 import 'package:flutter/material.dart';
-// import 'package:project/materials/app_colors.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:intl/intl.dart';
+import 'package:project/screens/edit_booking_screen.dart';
 
 class ReserveHistory extends StatefulWidget {
   const ReserveHistory({super.key});
 
   @override
-  _ReserveHistoryState createState() => _ReserveHistoryState();
+  State<ReserveHistory> createState() => _ReserveHistoryState();
 }
 
 class _ReserveHistoryState extends State<ReserveHistory> {
-  // ดึงข้อมูลการจองที่ตรงกับ userID ของผู้ใช้ที่ล็อกอินอยู่
   Future<List<Map<String, dynamic>>> fetchBookings() async {
-    // ดึง userID จาก Firebase Authentication
     User? user = FirebaseAuth.instance.currentUser;
     String? userID = user?.uid;
 
     if (userID == null) {
-      // ถ้าผู้ใช้ยังไม่ได้ล็อกอิน
       return [];
     }
 
-    // ดึงข้อมูลการจองที่มี userID ตรงกับผู้ใช้ที่ล็อกอินอยู่
     QuerySnapshot querySnapshot = await FirebaseFirestore.instance
         .collection('bookings')
         .where('userID', isEqualTo: userID)
@@ -41,23 +37,46 @@ class _ReserveHistoryState extends State<ReserveHistory> {
     return nights * pricePerNight;
   }
 
-  // ฟังก์ชันลบการจอง
+  int calculateNights(String checkIn, String checkOut) {
+    DateTime checkInDate = DateTime.parse(checkIn);
+    DateTime checkOutDate = DateTime.parse(checkOut);
+    return checkOutDate.difference(checkInDate).inDays;
+  }
+
   Future<void> deleteBooking(String bookingId) async {
     try {
-      await FirebaseFirestore.instance.collection('bookings').doc(bookingId).delete();
-      print('Booking deleted successfully');
-      // รีเฟรชหน้าจอหลังจากลบข้อมูลสำเร็จ
-      setState(() {}); // ใช้ setState เพื่อรีเฟรชหน้าจอ
+      await FirebaseFirestore.instance
+          .collection('bookings')
+          .doc(bookingId)
+          .delete();
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Booking deleted')),
+      );
+      setState(() {});
     } catch (e) {
       print('Error deleting booking: $e');
+    }
+  }
+
+  String getRemainingTime(Timestamp? bookingTimestamp) {
+    if (bookingTimestamp == null) return 'Not editable';
+    DateTime bookingTime = bookingTimestamp.toDate();
+    DateTime expirationTime = bookingTime.add(const Duration(minutes: 15));
+    DateTime now = DateTime.now();
+
+    if (now.isBefore(expirationTime)) {
+      String formattedTime =
+          DateFormat('HH:mm dd MMM yyyy').format(expirationTime);
+      return 'Editable until $formattedTime';
+    } else {
+      return 'Edit window closed';
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Reservation History')),
-      body: FutureBuilder<List<Map<String, dynamic>>>( 
+      body: FutureBuilder<List<Map<String, dynamic>>>(
         future: fetchBookings(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
@@ -80,41 +99,100 @@ class _ReserveHistoryState extends State<ReserveHistory> {
               int totalPrice = calculateTotalPrice(
                 booking['checkInDate'],
                 booking['checkOutDate'],
-                int.parse(booking['pricePerNight'].toString()), // แปลงเป็น int
+                int.parse(booking['pricePerNight'].toString()),
               );
+              int nights = calculateNights(
+                booking['checkInDate'],
+                booking['checkOutDate'],
+              );
+
+              Timestamp? bookingTimestamp = booking['bookingTime'];
+              bool canEdit = bookingTimestamp != null &&
+                  DateTime.now()
+                          .difference(bookingTimestamp.toDate())
+                          .inMinutes <
+                      15;
+              String remainingTime = getRemainingTime(bookingTimestamp);
 
               return Card(
                 margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 10),
                 elevation: 5,
+                color: Colors.white,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: ListTile(
-                  title: Text(booking['roomName'] ?? 'Unknown Room',
-                      style: const TextStyle(fontWeight: FontWeight.bold)),
-                  subtitle: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text('Name: ${booking['name']} ${booking['surname']}'),
-                      Text('Check-in: ${booking['checkInDate']}'),
-                      Text('Check-out: ${booking['checkOutDate']}'),
-                      Text('Price/Night: ${booking['pricePerNight']} ฿'),
-                      Text('Total Price: $totalPrice ฿',
-                          style: const TextStyle(
-                              fontWeight: FontWeight.bold, color: Colors.green)),
-                    ],
-                  ),
-                  trailing: IconButton(
-                    icon: const Icon(Icons.delete, color: Colors.red),
-                    onPressed: () {
-                      // เรียกฟังก์ชันลบข้อมูล
-                      deleteBooking(booking['id']);
-                      // หลังจากลบแล้ว อาจจะ refresh หรือออกจากหน้าจอ
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Booking deleted')),
-                      );
-                    },
-                  ),
+                child: Stack(
+                  children: [
+                    ListTile(
+                      title: Text(
+                        booking['roomName'] ?? 'Unknown Room',
+                        style: const TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                      subtitle: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                              'Name: ${booking['name']} ${booking['surname']}'),
+                          Text(
+                              'Check-in: ${DateFormat('dd MMM yyyy').format(DateTime.parse(booking['checkInDate']))}'),
+                          Text(
+                              'Check-out: ${DateFormat('dd MMM yyyy').format(DateTime.parse(booking['checkOutDate']))}'),
+                          Text('Price/Night: ${booking['pricePerNight']} ฿'),
+                          Text(
+                            'Total Price: $totalPrice ฿',
+                            style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                                color: Colors.green),
+                          ),
+                          Text(
+                            remainingTime,
+                            style: TextStyle(
+                              color: canEdit ? Colors.blue : Colors.grey,
+                              fontStyle: FontStyle.italic,
+                            ),
+                          ),
+                        ],
+                      ),
+                      trailing: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          if (canEdit)
+                            IconButton(
+                              icon: const Icon(Icons.edit, color: Colors.blue),
+                              onPressed: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) =>
+                                        EditBookingScreen(booking: booking),
+                                  ),
+                                ).then((_) {
+                                  setState(() {});
+                                });
+                              },
+                            ),
+                          IconButton(
+                            icon: const Icon(Icons.delete, color: Colors.red),
+                            onPressed: () {
+                              deleteBooking(booking['id']);
+                            },
+                          ),
+                        ],
+                      ),
+                    ),
+                    Positioned(
+                      top: 8,
+                      right: 12,
+                      child: Text(
+                        '$nights night${nights != 1 ? 's' : ''}',
+                        style: const TextStyle(
+                          fontSize: 14,
+                          color: Colors.black54,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               );
             },

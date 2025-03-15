@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-// import 'package:firebase_core/firebase_core.dart';
-import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 class DetailScreen extends StatefulWidget {
@@ -24,8 +22,8 @@ class _DetailScreenState extends State<DetailScreen> {
     return DateFormat('dd/MM/yyyy').format(date);
   }
 
-  // ฟังก์ชันคำนวณจำนวนเงินทั้งหมด
-  int calculateTotalPrice(DateTime checkInDate, DateTime checkOutDate, int pricePerNight) {
+  int calculateTotalPrice(
+      DateTime checkInDate, DateTime checkOutDate, int pricePerNight) {
     int nights = checkOutDate.difference(checkInDate).inDays;
     return nights * pricePerNight;
   }
@@ -75,7 +73,8 @@ class _DetailScreenState extends State<DetailScreen> {
         return AlertDialog(
           title: const Text('Information for booking'),
           content: UserInfoForm(
-            onSubmit: (String name, String surname, String phone, String email) {
+            onSubmit:
+                (String name, String surname, String phone, String email) {
               _saveToFirebase(name, surname, phone, email);
               Navigator.of(context).pop();
             },
@@ -85,16 +84,14 @@ class _DetailScreenState extends State<DetailScreen> {
     );
   }
 
-  // Function to save booking data with userID
-  Future<void> _saveToFirebase(String name, String surname, String phone, String email) async {
+  Future<void> _saveToFirebase(
+      String name, String surname, String phone, String email) async {
     try {
-      // Get the current user ID from FirebaseAuth
       User? user = FirebaseAuth.instance.currentUser;
       String? userID = user?.uid;
 
-      // Save booking data in Firestore with userID
       await FirebaseFirestore.instance.collection('bookings').add({
-        'userID': userID,  // Store the userID of the person making the booking
+        'userID': userID,
         'name': name,
         'surname': surname,
         'phone': phone,
@@ -103,6 +100,7 @@ class _DetailScreenState extends State<DetailScreen> {
         'checkOutDate': checkOutDate?.toString(),
         'roomName': widget.roomData['name'],
         'pricePerNight': widget.roomData['pricePerNight'],
+        'bookingTime': FieldValue.serverTimestamp(), // Added server timestamp
       });
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Book success.')),
@@ -118,13 +116,12 @@ class _DetailScreenState extends State<DetailScreen> {
   Widget build(BuildContext context) {
     List<String> imageUrls =
         List<String>.from(widget.roomData['roomImages'] ?? []);
-
-    // คำนวณจำนวนเงินทั้งหมดหากวันที่เช็คอินและเช็คเอาท์ไม่เป็น null
     int totalPrice = 0;
     if (checkInDate != null && checkOutDate != null) {
-      // แปลงค่าจาก Firebase ให้เป็น int ก่อนใช้งาน
-      int pricePerNight = int.tryParse(widget.roomData['pricePerNight'].toString()) ?? 0;
-      totalPrice = calculateTotalPrice(checkInDate!, checkOutDate!, pricePerNight);
+      int pricePerNight =
+          int.tryParse(widget.roomData['pricePerNight'].toString()) ?? 0;
+      totalPrice =
+          calculateTotalPrice(checkInDate!, checkOutDate!, pricePerNight);
     }
 
     return Scaffold(
@@ -134,6 +131,7 @@ class _DetailScreenState extends State<DetailScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // ... (rest of the build method remains unchanged)
             imageUrls.isEmpty
                 ? Container(
                     height: 200,
@@ -203,7 +201,8 @@ class _DetailScreenState extends State<DetailScreen> {
             const SizedBox(height: 10),
             Text('Location: ${widget.roomData['location'] ?? 'Unknown'}'),
             const SizedBox(height: 10),
-            Text('Price/Night: ${widget.roomData['pricePerNight']} ฿', style: TextStyle(color: Colors.green)),
+            Text('Price/Night: ${widget.roomData['pricePerNight']} ฿',
+                style: const TextStyle(color: Colors.green)),
             const SizedBox(height: 10),
             Text('Facilities: ${widget.roomData['Facilities'] ?? 'Unknown'}'),
             const SizedBox(height: 20),
@@ -218,7 +217,7 @@ class _DetailScreenState extends State<DetailScreen> {
                       child: Text.rich(
                         TextSpan(
                           children: [
-                            TextSpan(
+                            const TextSpan(
                                 text: 'Check-in : ',
                                 style: TextStyle(fontWeight: FontWeight.bold)),
                             TextSpan(text: _formatDate(checkInDate)),
@@ -237,7 +236,7 @@ class _DetailScreenState extends State<DetailScreen> {
                       child: Text.rich(
                         TextSpan(
                           children: [
-                            TextSpan(
+                            const TextSpan(
                                 text: 'Check-out : ',
                                 style: TextStyle(fontWeight: FontWeight.bold)),
                             TextSpan(text: _formatDate(checkOutDate)),
@@ -250,11 +249,13 @@ class _DetailScreenState extends State<DetailScreen> {
               ],
             ),
             const SizedBox(height: 20),
-            // แสดงจำนวนเงินทั้งหมด
             if (checkInDate != null && checkOutDate != null)
               Text(
                 'Total Price: $totalPrice ฿',
-                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.green),
+                style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.green),
               ),
             const SizedBox(height: 20),
             SizedBox(
@@ -307,7 +308,7 @@ class _UserInfoFormState extends State<UserInfoForm> {
 
     if (name.isEmpty || surname.isEmpty || phone.isEmpty || email.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter information .')),
+        const SnackBar(content: Text('Please enter information.')),
       );
       return;
     }
