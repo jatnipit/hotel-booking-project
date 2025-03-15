@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'details_screen.dart';
+import 'package:project/authen/login_page.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -13,7 +14,11 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   void signOut(BuildContext context) async {
     await FirebaseAuth.instance.signOut();
-    Navigator.pop(context);
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(
+          builder: (context) => const LoginPage()), // เปลี่ยนไปหน้า LoginPage
+    );
   }
 
   Future<QuerySnapshot> fetchAllRoomsData() async {
@@ -23,6 +28,15 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: AppBar(
+        title: const Text('Home Page'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.logout),
+            onPressed: () => signOut(context), // เมื่อคลิกปุ่มล็อกเอาท์
+          ),
+        ],
+      ),
       body: FutureBuilder<QuerySnapshot>(
         future: fetchAllRoomsData(),
         builder: (context, snapshot) {

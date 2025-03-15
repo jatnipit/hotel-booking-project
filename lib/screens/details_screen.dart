@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 // import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class DetailScreen extends StatefulWidget {
   final Map<String, dynamic> roomData;
@@ -21,6 +22,12 @@ class _DetailScreenState extends State<DetailScreen> {
   String _formatDate(DateTime? date) {
     if (date == null) return 'Select date';
     return DateFormat('dd/MM/yyyy').format(date);
+  }
+
+  // ฟังก์ชันคำนวณจำนวนเงินทั้งหมด
+  int calculateTotalPrice(DateTime checkInDate, DateTime checkOutDate, int pricePerNight) {
+    int nights = checkOutDate.difference(checkInDate).inDays;
+    return nights * pricePerNight;
   }
 
   Future<void> _selectDate(BuildContext context, bool isCheckIn) async {
@@ -68,8 +75,7 @@ class _DetailScreenState extends State<DetailScreen> {
         return AlertDialog(
           title: const Text('Information for booking'),
           content: UserInfoForm(
-            onSubmit:
-                (String name, String surname, String phone, String email) {
+            onSubmit: (String name, String surname, String phone, String email) {
               _saveToFirebase(name, surname, phone, email);
               Navigator.of(context).pop();
             },
@@ -79,10 +85,16 @@ class _DetailScreenState extends State<DetailScreen> {
     );
   }
 
-  Future<void> _saveToFirebase(
-      String name, String surname, String phone, String email) async {
+  // Function to save booking data with userID
+  Future<void> _saveToFirebase(String name, String surname, String phone, String email) async {
     try {
+      // Get the current user ID from FirebaseAuth
+      User? user = FirebaseAuth.instance.currentUser;
+      String? userID = user?.uid;
+
+      // Save booking data in Firestore with userID
       await FirebaseFirestore.instance.collection('bookings').add({
+        'userID': userID,  // Store the userID of the person making the booking
         'name': name,
         'surname': surname,
         'phone': phone,
@@ -106,6 +118,14 @@ class _DetailScreenState extends State<DetailScreen> {
   Widget build(BuildContext context) {
     List<String> imageUrls =
         List<String>.from(widget.roomData['roomImages'] ?? []);
+
+    // คำนวณจำนวนเงินทั้งหมดหากวันที่เช็คอินและเช็คเอาท์ไม่เป็น null
+    int totalPrice = 0;
+    if (checkInDate != null && checkOutDate != null) {
+      // แปลงค่าจาก Firebase ให้เป็น int ก่อนใช้งาน
+      int pricePerNight = int.tryParse(widget.roomData['pricePerNight'].toString()) ?? 0;
+      totalPrice = calculateTotalPrice(checkInDate!, checkOutDate!, pricePerNight);
+    }
 
     return Scaffold(
       appBar: AppBar(title: Text(widget.roomData['name'] ?? 'Room Details')),
@@ -183,9 +203,7 @@ class _DetailScreenState extends State<DetailScreen> {
             const SizedBox(height: 10),
             Text('Location: ${widget.roomData['location'] ?? 'Unknown'}'),
             const SizedBox(height: 10),
-            Text(
-                'Price/Night: ${widget.roomData['pricePerNight'] ?? 'Unknown'} ฿',
-                style: TextStyle(color: Colors.green)),
+            Text('Price/Night: ${widget.roomData['pricePerNight']} ฿', style: TextStyle(color: Colors.green)),
             const SizedBox(height: 10),
             Text('Facilities: ${widget.roomData['Facilities'] ?? 'Unknown'}'),
             const SizedBox(height: 20),
@@ -231,6 +249,13 @@ class _DetailScreenState extends State<DetailScreen> {
                 ),
               ],
             ),
+            const SizedBox(height: 20),
+            // แสดงจำนวนเงินทั้งหมด
+            if (checkInDate != null && checkOutDate != null)
+              Text(
+                'Total Price: $totalPrice ฿',
+                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.green),
+              ),
             const SizedBox(height: 20),
             SizedBox(
               width: double.infinity,
