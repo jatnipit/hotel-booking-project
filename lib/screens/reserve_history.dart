@@ -2,8 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:intl/intl.dart';
-import 'package:project/materials/app_colors.dart';
 import 'package:project/screens/edit_booking_screen.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:project/materials/app_colors.dart';
 
 class ReserveHistory extends StatefulWidget {
   const ReserveHistory({super.key});
@@ -15,17 +16,22 @@ class ReserveHistory extends StatefulWidget {
 class _ReserveHistoryState extends State<ReserveHistory>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
+  double discountPercentage = 0.0; // Default discount percentage is 0%
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
+    _loadDiscount(); // Load discount from SharedPreferences when screen starts
   }
 
-  @override
-  void dispose() {
-    _tabController.dispose();
-    super.dispose();
+  // Load discount value from SharedPreferences
+  Future<void> _loadDiscount() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    double savedDiscount = prefs.getDouble('discountPercentage') ?? 0.0;
+    setState(() {
+      discountPercentage = savedDiscount > 0.0 ? savedDiscount : 0.0;
+    });
   }
 
   Future<List<Map<String, dynamic>>> fetchBookings() async {
@@ -46,11 +52,22 @@ class _ReserveHistoryState extends State<ReserveHistory>
         .toList();
   }
 
+  // Calculate total price taking discount into account.
   int calculateTotalPrice(String checkIn, String checkOut, int pricePerNight) {
     DateTime checkInDate = DateTime.parse(checkIn);
     DateTime checkOutDate = DateTime.parse(checkOut);
     int nights = checkOutDate.difference(checkInDate).inDays;
-    return nights * pricePerNight;
+
+    // Full price before discount
+    int totalPrice = nights * pricePerNight;
+
+    // Calculate discount amount
+    double discountAmount = totalPrice * discountPercentage;
+
+    // Calculate final price after discount
+    double finalPrice = totalPrice - discountAmount;
+
+    return finalPrice.round(); // Rounded to an integer
   }
 
   int calculateNights(String checkIn, String checkOut) {
@@ -59,6 +76,7 @@ class _ReserveHistoryState extends State<ReserveHistory>
     return checkOutDate.difference(checkInDate).inDays;
   }
 
+  // Cancel a booking by updating the booking document
   Future<void> cancelBooking(String bookingId) async {
     // Show confirmation dialog before cancelling
     showDialog(
@@ -101,6 +119,7 @@ class _ReserveHistoryState extends State<ReserveHistory>
     );
   }
 
+  // Return a string indicating if a booking is editable, cancelled, or completed.
   String getRemainingTime(
       Timestamp? bookingTimestamp, bool isCancelled, bool isPast) {
     if (isCancelled) {
@@ -123,6 +142,7 @@ class _ReserveHistoryState extends State<ReserveHistory>
     }
   }
 
+  // Build a list of bookings based on the type (active, past, or cancelled)
   Widget buildBookingList(List<Map<String, dynamic>> bookings, String tabType) {
     if (bookings.isEmpty) {
       String message = tabType == 'active'
@@ -183,6 +203,12 @@ class _ReserveHistoryState extends State<ReserveHistory>
                       style: const TextStyle(
                           fontWeight: FontWeight.bold, color: Colors.green),
                     ),
+                    if (discountPercentage > 0)
+                      Text(
+                        'Discount: ${discountPercentage * 100}%',
+                        style: const TextStyle(
+                            color: Colors.red, fontWeight: FontWeight.bold),
+                      ),
                     Text(
                       remainingTime,
                       style: TextStyle(
@@ -294,6 +320,7 @@ class _ReserveHistoryState extends State<ReserveHistory>
                 return TabBarView(
                   controller: _tabController,
                   children: [
+                    // Active bookings
                     buildBookingList(
                       allBookings
                           .where((b) =>
@@ -303,6 +330,7 @@ class _ReserveHistoryState extends State<ReserveHistory>
                           .toList(),
                       'active',
                     ),
+                    // Past bookings
                     buildBookingList(
                       allBookings
                           .where((b) =>
@@ -312,6 +340,7 @@ class _ReserveHistoryState extends State<ReserveHistory>
                           .toList(),
                       'past',
                     ),
+                    // Cancelled bookings
                     buildBookingList(
                       allBookings
                           .where((b) => b['isCancelled'] ?? false)

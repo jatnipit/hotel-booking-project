@@ -16,12 +16,12 @@ class UserProfileScreen extends StatefulWidget {
 class _UserProfileScreenState extends State<UserProfileScreen> {
   @override
   Widget build(BuildContext context) {
-    // Get the current user dynamically during build
+    
     User? user = FirebaseAuth.instance.currentUser;
     String? userId = user?.uid;
 
     return Scaffold(
-      backgroundColor: AppColors.appBackground, // Set the background color here
+      backgroundColor: AppColors.appBackground,
       body: Padding(
         padding: const EdgeInsets.all(15),
         child: ListView(
@@ -41,21 +41,24 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                 }
               },
             ),
-            const SectionHeader(title: 'Settings'),
+            const SectionHeader(title: 'Promotion'),
             CustomListTile(
-              title: 'Device Setting',
-              leadingIcon: Icons.settings_outlined,
+              title: 'Discount',
+              leadingIcon: Icons.discount,
               onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const DeviceSettings(),
-                  ),
-                );
+                if (userId != null) { // ตรวจสอบว่ามี userId จริงหรือไม่
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => DeviceSettings(userId: userId), // ส่ง userId ไปด้วย
+                    ),
+                  );
+                }
               },
             ),
+
             const SizedBox(height: 28),
-            // Conditionally show Log out or Log in button based on the user's sign-in status
+           
             user != null
                 ? Container(
                     color: Colors.transparent,
