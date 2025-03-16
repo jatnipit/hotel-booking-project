@@ -1,10 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
-import 'package:project/materials/app_colors.dart';
 import 'package:project/main.dart';
-// import 'package:project/screens/home_screen.dart';
-
 import 'forgot_password_page.dart';
 import 'register_page.dart';
 
@@ -23,12 +20,8 @@ class _LoginPageState extends State<LoginPage> {
   Future<UserCredential> signInWithGoogle() async {
     try {
       final GoogleSignInAccount? googleUser = await GoogleSignIn().signIn();
-
-      // Obtain the auth details from the request
       final GoogleSignInAuthentication? googleAuth =
           await googleUser?.authentication;
-
-      // Create a new credential
       final credential = GoogleAuthProvider.credential(
         accessToken: googleAuth?.accessToken,
         idToken: googleAuth?.idToken,
@@ -37,9 +30,7 @@ class _LoginPageState extends State<LoginPage> {
           await FirebaseAuth.instance.signInWithCredential(credential);
       if (mounted) {
         Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => const MyApp()),
-        );
+            context, MaterialPageRoute(builder: (context) => const MyApp()));
       }
       return result;
     } catch (e) {
@@ -64,12 +55,9 @@ class _LoginPageState extends State<LoginPage> {
         password: passwordController.text.trim(),
       );
       if (mounted) {
-        Navigator.pop(context); // Dismiss the loading dialog
-        // Navigate to MyApp (which will show HomeScreen if logged in)
+        Navigator.pop(context);
         Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => const MyApp()),
-        );
+            context, MaterialPageRoute(builder: (context) => const MyApp()));
       }
     } on FirebaseAuthException catch (e) {
       if (mounted) {
@@ -84,7 +72,10 @@ class _LoginPageState extends State<LoginPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(),
+      appBar: AppBar(
+        backgroundColor: Theme.of(context).primaryColor,
+      ),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: SingleChildScrollView(
         child: Padding(
           padding: const EdgeInsets.all(20.0),
@@ -97,11 +88,11 @@ class _LoginPageState extends State<LoginPage> {
                   margin: const EdgeInsets.only(top: 30, bottom: 10),
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
-                    color: AppColors.loginIcon,
+                    color: Theme.of(context).colorScheme.surface,
                     shape: BoxShape.circle,
                   ),
-                  child: const Icon(Icons.person,
-                      size: 150, color: AppColors.primary),
+                  child: Icon(Icons.person,
+                      size: 150, color: Theme.of(context).primaryColor),
                 ),
               ),
               const SizedBox(height: 15),
@@ -112,9 +103,11 @@ class _LoginPageState extends State<LoginPage> {
                     TextFormField(
                       controller: emailController,
                       keyboardType: TextInputType.emailAddress,
-                      decoration: const InputDecoration(
-                        icon: Icon(Icons.mail),
+                      decoration: InputDecoration(
+                        icon: Icon(Icons.mail,
+                            color: Theme.of(context).iconTheme.color),
                         labelText: 'Email',
+                        labelStyle: Theme.of(context).textTheme.bodyMedium,
                       ),
                       validator: (value) => value == null || value.isEmpty
                           ? 'กรุณากรอก email'
@@ -123,9 +116,11 @@ class _LoginPageState extends State<LoginPage> {
                     TextFormField(
                       controller: passwordController,
                       obscureText: true,
-                      decoration: const InputDecoration(
-                        icon: Icon(Icons.lock),
+                      decoration: InputDecoration(
+                        icon: Icon(Icons.lock,
+                            color: Theme.of(context).iconTheme.color),
                         labelText: 'Password',
+                        labelStyle: Theme.of(context).textTheme.bodyMedium,
                       ),
                       validator: (value) => value == null || value.isEmpty
                           ? 'กรุณากรอกรหัสผ่าน'
@@ -137,15 +132,15 @@ class _LoginPageState extends State<LoginPage> {
                       child: GestureDetector(
                         onTap: () {
                           Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => const ForgotPasswordPage(),
-                            ),
-                          );
+                              context,
+                              MaterialPageRoute(
+                                  builder: (context) =>
+                                      const ForgotPasswordPage()));
                         },
-                        child: const Text(
+                        child: Text(
                           'Forgot Password?',
-                          style: TextStyle(color: AppColors.primary),
+                          style:
+                              TextStyle(color: Theme.of(context).primaryColor),
                         ),
                       ),
                     ),
@@ -153,69 +148,63 @@ class _LoginPageState extends State<LoginPage> {
                     ElevatedButton(
                       onPressed: signUserIn,
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.primary,
+                        backgroundColor: Theme.of(context).primaryColor,
+                        foregroundColor:
+                            Theme.of(context).colorScheme.onPrimary,
                       ),
-                      child: const Text(
-                        'Login',
-                        style: TextStyle(color: Colors.white),
-                      ),
+                      child: const Text('Login'),
                     ),
                   ],
                 ),
               ),
               const SizedBox(height: 40),
-              const Text('Or continue with'),
+              Text('Or continue with',
+                  style: Theme.of(context).textTheme.bodyMedium),
               const SizedBox(height: 15),
               SizedBox(
                 width: 220,
                 child: ElevatedButton(
-                    onPressed: () {
-                      signInWithGoogle();
-                    },
-                    style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.loginIcon,
-                        shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(5)),
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 10, vertical: 8)),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Image.asset(
-                          'assets/logo/google_logo.png',
-                          height: 25,
-                        ),
-                        const SizedBox(width: 10),
-                        Text(
-                          'Sign in with Google',
-                          style: TextStyle(
-                            color: AppColors.primary,
-                          ),
-                        ),
-                      ],
-                    )),
+                  onPressed: signInWithGoogle,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Theme.of(context).colorScheme.surface,
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(5)),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Image.asset('assets/logo/google_logo.png', height: 25),
+                      const SizedBox(width: 10),
+                      Text(
+                        'Sign in with Google',
+                        style: TextStyle(color: Theme.of(context).primaryColor),
+                      ),
+                    ],
+                  ),
+                ),
               ),
               const SizedBox(height: 20),
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Text('Not a member?'),
+                  Text('Not a member?',
+                      style: Theme.of(context).textTheme.bodyMedium),
                   TextButton(
                     onPressed: () {
                       Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const RegisterPage(),
-                        ),
-                      );
+                          context,
+                          MaterialPageRoute(
+                              builder: (context) => const RegisterPage()));
                     },
-                    child: const Text(
+                    child: Text(
                       'Register now',
-                      style: TextStyle(color: AppColors.primary),
+                      style: TextStyle(color: Theme.of(context).primaryColor),
                     ),
                   ),
                 ],
-              )
+              ),
             ],
           ),
         ),

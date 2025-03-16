@@ -1,6 +1,5 @@
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:project/materials/app_colors.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class ForgotPasswordPage extends StatefulWidget {
   const ForgotPasswordPage({super.key});
@@ -18,13 +17,9 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
       try {
         await FirebaseAuth.instance
             .sendPasswordResetEmail(email: emailController.text);
-        if (mounted) {
-          // Ensure the widget is still in the tree
-          Navigator.pop(context);
-        }
+        if (mounted) Navigator.pop(context);
       } on FirebaseAuthException catch (e) {
         if (mounted) {
-          // Ensure the widget is still in the tree
           showDialog(
             context: context,
             builder: (context) => AlertDialog(
@@ -32,9 +27,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
               content: Text(e.message ?? 'An unknown error occurred'),
               actions: [
                 TextButton(
-                  onPressed: () {
-                    Navigator.pop(context);
-                  },
+                  onPressed: () => Navigator.pop(context),
                   child: const Text('OK'),
                 ),
               ],
@@ -49,17 +42,12 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        iconTheme: IconThemeData(color: Colors.white),
-        title: const Center(
-          child: Text('MyApp', style: TextStyle(color: Colors.white)),
-        ),
-        actions: const [
-          Icon(
-            Icons.help,
-          )
-        ],
-        backgroundColor: AppColors.primary,
+        iconTheme: Theme.of(context).appBarTheme.iconTheme,
+        title: const Center(child: Text('MyApp')),
+        actions: const [Icon(Icons.help)],
+        backgroundColor: Theme.of(context).primaryColor,
       ),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: Container(
         margin: const EdgeInsets.all(20),
         child: Form(
@@ -67,35 +55,30 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Text(
+              Text(
                 'Enter your email to get a password reset link',
                 textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 25, fontWeight: FontWeight.bold),
+                style: Theme.of(context).textTheme.headlineSmall,
               ),
               const SizedBox(height: 20),
               TextFormField(
                 controller: emailController,
-                decoration: const InputDecoration(
-                  border: OutlineInputBorder(),
+                decoration: InputDecoration(
+                  border: const OutlineInputBorder(),
                   labelText: 'Your email',
+                  labelStyle: Theme.of(context).textTheme.bodyMedium,
                 ),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'กรุณากรอก email';
-                  }
-                  return null; // Fix: Return null when input is valid
-                },
+                validator: (value) =>
+                    value == null || value.isEmpty ? 'กรุณากรอก email' : null,
               ),
               const SizedBox(height: 20),
               ElevatedButton(
                 onPressed: passwordReset,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primary,
+                  backgroundColor: Theme.of(context).primaryColor,
+                  foregroundColor: Theme.of(context).colorScheme.onPrimary,
                 ),
-                child: const Text(
-                  'Reset Password',
-                  style: TextStyle(color: Colors.white),
-                ),
+                child: const Text('Reset Password'),
               ),
             ],
           ),

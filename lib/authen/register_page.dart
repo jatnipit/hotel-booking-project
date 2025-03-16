@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:project/main.dart'; // Import MyApp here
-import 'package:shared_preferences/shared_preferences.dart'; // Import SharedPreferences
+import 'package:project/main.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class RegisterPage extends StatefulWidget {
   const RegisterPage({super.key});
@@ -13,20 +13,17 @@ class RegisterPage extends StatefulWidget {
 
 class _RegisterPageState extends State<RegisterPage> {
   final _formKey = GlobalKey<FormState>();
-
   final firstNameController = TextEditingController();
   final lastNameController = TextEditingController();
   final emailController = TextEditingController();
   final passwordController = TextEditingController();
   final confirmPasswordController = TextEditingController();
 
-  // ฟังก์ชันรีเซ็ตข้อมูลที่ต้องการหลังจากสมัคร
   Future<void> resetUserState() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
-    // รีเซ็ตข้อมูลที่ต้องการ เช่น รีเซ็ตส่วนลด
-    await prefs.setDouble('discountPercentage', 0.0); // รีเซ็ตส่วนลด
-    await prefs.remove('discount_used_${FirebaseAuth.instance.currentUser?.uid}'); // ลบข้อมูลส่วนลดที่เคยใช้
-    // เพิ่มการรีเซ็ตข้อมูลอื่น ๆ ที่คุณต้องการ
+    await prefs.setDouble('discountPercentage', 0.0);
+    await prefs
+        .remove('discount_used_${FirebaseAuth.instance.currentUser?.uid}');
   }
 
   Future<void> signUserUp() async {
@@ -49,9 +46,8 @@ class _RegisterPageState extends State<RegisterPage> {
               content: const Text('Passwords do not match!'),
               actions: [
                 TextButton(
-                  onPressed: () => Navigator.pop(context),
-                  child: const Text('OK'),
-                ),
+                    onPressed: () => Navigator.pop(context),
+                    child: const Text('OK')),
               ],
             ),
           );
@@ -73,15 +69,12 @@ class _RegisterPageState extends State<RegisterPage> {
         'email': emailController.text.trim(),
       });
 
-      // เรียกใช้ฟังก์ชันรีเซ็ตข้อมูลหลังจากสมัครสำเร็จ
       await resetUserState();
 
       if (mounted) {
         Navigator.pop(context);
         Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => const MyApp()),
-        );
+            context, MaterialPageRoute(builder: (context) => const MyApp()));
       }
     } on FirebaseAuthException catch (e) {
       if (mounted) {
@@ -93,9 +86,8 @@ class _RegisterPageState extends State<RegisterPage> {
             content: Text(e.message ?? 'An unknown error occurred'),
             actions: [
               TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: const Text('OK'),
-              ),
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('OK')),
             ],
           ),
         );
@@ -110,9 +102,8 @@ class _RegisterPageState extends State<RegisterPage> {
             content: Text('Failed to save user data: ${e.message}'),
             actions: [
               TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: const Text('OK'),
-              ),
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('OK')),
             ],
           ),
         );
@@ -134,26 +125,22 @@ class _RegisterPageState extends State<RegisterPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        iconTheme: const IconThemeData(color: Colors.white),
-        title: const Center(
-          child: Text(
-            'Example Firebase',
-            style: TextStyle(color: Colors.white),
-          ),
-        ),
-        actions: const [Icon(Icons.help, color: Colors.white)],
-        backgroundColor: const Color.fromRGBO(40, 84, 48, 1),
+        iconTheme: Theme.of(context).appBarTheme.iconTheme,
+        title: const Center(child: Text('Example Firebase')),
+        actions: const [Icon(Icons.help)],
+        backgroundColor: Theme.of(context).primaryColor,
       ),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: Container(
         margin: const EdgeInsets.all(20),
         child: SingleChildScrollView(
           child: Column(
             children: [
               const SizedBox(height: 30),
-              const Center(
+              Center(
                 child: Text(
                   'Create Account',
-                  style: TextStyle(fontSize: 30, fontWeight: FontWeight.bold),
+                  style: Theme.of(context).textTheme.headlineSmall,
                 ),
               ),
               const SizedBox(height: 30),
@@ -163,86 +150,77 @@ class _RegisterPageState extends State<RegisterPage> {
                   children: [
                     TextFormField(
                       controller: firstNameController,
-                      decoration: const InputDecoration(
-                        border: OutlineInputBorder(),
+                      decoration: InputDecoration(
+                        border: const OutlineInputBorder(),
                         labelText: 'First Name',
+                        labelStyle: Theme.of(context).textTheme.bodyMedium,
                       ),
-                      validator: (value) {
-                        if (value == null || value.trim().isEmpty) {
-                          return 'Enter your first name';
-                        }
-                        return null;
-                      },
+                      validator: (value) =>
+                          value == null || value.trim().isEmpty
+                              ? 'Enter your first name'
+                              : null,
                     ),
                     const SizedBox(height: 15),
                     TextFormField(
                       controller: lastNameController,
-                      decoration: const InputDecoration(
-                        border: OutlineInputBorder(),
+                      decoration: InputDecoration(
+                        border: const OutlineInputBorder(),
                         labelText: 'Last Name',
+                        labelStyle: Theme.of(context).textTheme.bodyMedium,
                       ),
-                      validator: (value) {
-                        if (value == null || value.trim().isEmpty) {
-                          return 'Please enter your last name';
-                        }
-                        return null;
-                      },
+                      validator: (value) =>
+                          value == null || value.trim().isEmpty
+                              ? 'Please enter your last name'
+                              : null,
                     ),
                     const SizedBox(height: 15),
                     TextFormField(
                       controller: emailController,
                       autofocus: true,
-                      decoration: const InputDecoration(
-                        border: OutlineInputBorder(),
+                      decoration: InputDecoration(
+                        border: const OutlineInputBorder(),
                         labelText: 'Email',
+                        labelStyle: Theme.of(context).textTheme.bodyMedium,
                       ),
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'Please enter email';
-                        }
-                        return null;
-                      },
+                      validator: (value) => value == null || value.isEmpty
+                          ? 'Please enter email'
+                          : null,
                     ),
                     const SizedBox(height: 15),
                     TextFormField(
                       controller: passwordController,
                       obscureText: true,
-                      decoration: const InputDecoration(
-                        border: OutlineInputBorder(),
+                      decoration: InputDecoration(
+                        border: const OutlineInputBorder(),
                         labelText: 'Password',
+                        labelStyle: Theme.of(context).textTheme.bodyMedium,
                       ),
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'Please enter password';
-                        }
-                        return null;
-                      },
+                      validator: (value) => value == null || value.isEmpty
+                          ? 'Please enter password'
+                          : null,
                     ),
                     const SizedBox(height: 15),
                     TextFormField(
                       controller: confirmPasswordController,
                       obscureText: true,
-                      decoration: const InputDecoration(
-                        border: OutlineInputBorder(),
+                      decoration: InputDecoration(
+                        border: const OutlineInputBorder(),
                         labelText: 'Confirm Password',
+                        labelStyle: Theme.of(context).textTheme.bodyMedium,
                       ),
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'Please enter confirm password';
-                        }
-                        return null;
-                      },
+                      validator: (value) => value == null || value.isEmpty
+                          ? 'Please enter confirm password'
+                          : null,
                     ),
                     const SizedBox(height: 20),
                     ElevatedButton(
                       onPressed: signUserUp,
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color.fromRGBO(164, 190, 123, 1),
+                        backgroundColor: Theme.of(context).primaryColor,
+                        foregroundColor:
+                            Theme.of(context).colorScheme.onPrimary,
                       ),
-                      child: const Text(
-                        'Sign Up',
-                        style: TextStyle(color: Colors.white),
-                      ),
+                      child: const Text('Sign Up'),
                     ),
                   ],
                 ),

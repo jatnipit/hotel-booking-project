@@ -1,10 +1,9 @@
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:project/materials/app_colors.dart';
-import 'package:project/materials/custom_list_tile.dart';
-import 'package:project/profiles/device_settings.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:project/profiles/personal_info.dart';
+import 'package:project/profiles/device_settings.dart';
 import 'package:project/authen/login_page.dart';
+import 'package:project/materials/custom_list_tile.dart'; // Contains SectionHeader and CustomListTile
 
 class UserProfileScreen extends StatefulWidget {
   const UserProfileScreen({super.key});
@@ -16,56 +15,62 @@ class UserProfileScreen extends StatefulWidget {
 class _UserProfileScreenState extends State<UserProfileScreen> {
   @override
   Widget build(BuildContext context) {
-    
     User? user = FirebaseAuth.instance.currentUser;
     String? userId = user?.uid;
 
     return Scaffold(
-      backgroundColor: AppColors.appBackground,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: Padding(
         padding: const EdgeInsets.all(15),
         child: ListView(
           children: [
-            const SectionHeader(title: 'Account Management'),
+            // Conditionally show Account Management section if user is signed in
+            if (user != null) ...[
+              SectionHeader(title: 'Account Management'),
+              CustomListTile(
+                title: 'Personal information',
+                leadingIcon: Icons.person_outlined,
+                onTap: () {
+                  if (userId != null) {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => PersonalInfo(userId: userId),
+                      ),
+                    );
+                  }
+                },
+              ),
+            ],
+
+            // Preferences section (always visible)
+            SectionHeader(title: 'Preferences'),
             CustomListTile(
-              title: 'Personal Information',
-              leadingIcon: Icons.person_outlined,
+              title: 'Personal preferences',
+              leadingIcon: Icons.settings_outlined,
               onTap: () {
                 if (userId != null) {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => PersonalInfo(userId: userId),
-                    ),
-                  );
-                }
-              },
-            ),
-            const SectionHeader(title: 'Promotion'),
-            CustomListTile(
-              title: 'Discount',
-              leadingIcon: Icons.discount,
-              onTap: () {
-                if (userId != null) { // ตรวจสอบว่ามี userId จริงหรือไม่
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => DeviceSettings(userId: userId), // ส่ง userId ไปด้วย
+                      builder: (context) => DeviceSettings(userId: userId),
                     ),
                   );
                 }
               },
             ),
 
+            // Spacing before login/logout button
             const SizedBox(height: 28),
-           
+
+            // Conditional Login/Logout Button
             user != null
                 ? Container(
                     color: Colors.transparent,
                     child: Ink(
                       decoration: BoxDecoration(
-                        color: Colors.red,
-                        border: Border.all(color: Colors.grey.shade300),
+                        color: Colors.white,
+                        border: Border.all(color: Colors.red, width: 2),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: InkWell(
@@ -109,8 +114,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                           title: Center(
                             child: Text(
                               'Log out',
-                              style:
-                                  TextStyle(fontSize: 16, color: Colors.white),
+                              style: TextStyle(fontSize: 16, color: Colors.red),
                             ),
                           ),
                         ),

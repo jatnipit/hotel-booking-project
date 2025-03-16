@@ -5,7 +5,6 @@ import 'dart:async';
 
 class EditBookingScreen extends StatefulWidget {
   final Map<String, dynamic> booking;
-
   const EditBookingScreen({super.key, required this.booking});
 
   @override
@@ -31,12 +30,9 @@ class _EditBookingScreenState extends State<EditBookingScreen> {
     _emailController = TextEditingController(text: widget.booking['email']);
     checkInDate = DateTime.parse(widget.booking['checkInDate']);
     checkOutDate = DateTime.parse(widget.booking['checkOutDate']);
-
-    // Start a timer to update remaining time
     _updateRemainingTime();
-    _timer = Timer.periodic(Duration(seconds: 1), (timer) {
-      _updateRemainingTime();
-    });
+    _timer =
+        Timer.periodic(Duration(seconds: 1), (timer) => _updateRemainingTime());
   }
 
   void _updateRemainingTime() {
@@ -48,35 +44,26 @@ class _EditBookingScreenState extends State<EditBookingScreen> {
       if (secondsRemaining > 0) {
         int minutes = secondsRemaining ~/ 60;
         int seconds = secondsRemaining % 60;
-        setState(() {
-          remainingTime =
-              'Time remaining: $minutes:${seconds.toString().padLeft(2, '0')}';
-        });
+        setState(() => remainingTime =
+            'Time remaining: $minutes:${seconds.toString().padLeft(2, '0')}');
       } else {
-        setState(() {
-          remainingTime = 'Edit window closed';
-        });
+        setState(() => remainingTime = 'Edit window closed');
         _timer?.cancel();
-        Navigator.pop(context); // Optionally close the screen if time runs out
+        Navigator.pop(context);
       }
     } else {
-      setState(() {
-        remainingTime = 'No booking time available';
-      });
+      setState(() => remainingTime = 'No booking time available');
     }
   }
 
-  String _formatDate(DateTime? date) {
-    if (date == null) return 'Select date';
-    return DateFormat('dd/MM/yyyy').format(date);
-  }
+  String _formatDate(DateTime? date) =>
+      date == null ? 'Select date' : DateFormat('dd/MM/yyyy').format(date);
 
   Future<void> _selectDate(BuildContext context, bool isCheckIn) async {
     DateTime today = DateTime.now();
     DateTime initialDate = isCheckIn
         ? (checkInDate ?? today)
         : (checkOutDate ?? (checkInDate ?? today).add(const Duration(days: 1)));
-
     final DateTime? picked = await showDatePicker(
       context: context,
       initialDate: initialDate,
@@ -88,18 +75,15 @@ class _EditBookingScreenState extends State<EditBookingScreen> {
       setState(() {
         if (isCheckIn) {
           checkInDate = picked;
-          if (checkOutDate != null && checkOutDate!.isBefore(picked)) {
+          if (checkOutDate != null && checkOutDate!.isBefore(picked))
             checkOutDate = null;
-          }
-        } else {
-          if (picked.isBefore(checkInDate ?? today)) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                  content: Text('Check-out date must be after check-in date.')),
-            );
-            return;
-          }
+        } else if (!picked.isBefore(checkInDate ?? today)) {
           checkOutDate = picked;
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+                content: Text('Check-out date must be after check-in date.')),
+          );
         }
       });
     }
@@ -107,10 +91,8 @@ class _EditBookingScreenState extends State<EditBookingScreen> {
 
   Future<void> _saveChanges() async {
     if (checkInDate == null || checkOutDate == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-            content: Text('Please select check-in and check-out dates.')),
-      );
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text('Please select check-in and check-out dates.')));
       return;
     }
     String name = _nameController.text.trim();
@@ -120,17 +102,15 @@ class _EditBookingScreenState extends State<EditBookingScreen> {
 
     if (name.isEmpty || surname.isEmpty || phone.isEmpty || email.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please fill in all fields.')),
-      );
+          const SnackBar(content: Text('Please fill in all fields.')));
       return;
     }
 
     Timestamp? bookingTimestamp = widget.booking['bookingTime'];
     if (bookingTimestamp != null &&
         DateTime.now().difference(bookingTimestamp.toDate()).inMinutes >= 15) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('The 15-minute edit window has expired.')),
-      );
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text('The 15-minute edit window has expired.')));
       Navigator.pop(context);
       return;
     }
@@ -148,20 +128,22 @@ class _EditBookingScreenState extends State<EditBookingScreen> {
         'checkOutDate': checkOutDate!.toString(),
       });
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Booking updated successfully.')),
-      );
+          const SnackBar(content: Text('Booking updated successfully.')));
       Navigator.pop(context);
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Error updating booking.')),
-      );
+          const SnackBar(content: Text('Error updating booking.')));
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Edit Booking')),
+      appBar: AppBar(
+        title: const Text('Edit Booking'),
+        backgroundColor: Theme.of(context).primaryColor,
+      ),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: Padding(
         padding: const EdgeInsets.all(20.0),
         child: SingleChildScrollView(
@@ -170,15 +152,16 @@ class _EditBookingScreenState extends State<EditBookingScreen> {
             children: [
               Container(
                 padding: const EdgeInsets.all(10),
-                color: Colors.yellow[100],
+                color: Theme.of(context).colorScheme.surfaceVariant,
                 child: Row(
                   children: [
-                    Icon(Icons.warning_amber_rounded, color: Colors.orange),
-                    SizedBox(width: 10),
+                    Icon(Icons.warning_amber_rounded,
+                        color: Theme.of(context).colorScheme.secondary),
+                    const SizedBox(width: 10),
                     Expanded(
                       child: Text(
                         'You can edit this booking within 15 minutes of booking. $remainingTime',
-                        style: TextStyle(color: Colors.black87),
+                        style: Theme.of(context).textTheme.bodyMedium,
                       ),
                     ),
                   ],
@@ -186,10 +169,10 @@ class _EditBookingScreenState extends State<EditBookingScreen> {
               ),
               const SizedBox(height: 20),
               Text('Room: ${widget.booking['roomName']}',
-                  style: const TextStyle(fontSize: 18)),
+                  style: Theme.of(context).textTheme.bodyLarge),
               const SizedBox(height: 10),
               Text('Price per night: ${widget.booking['pricePerNight']} ฿',
-                  style: const TextStyle(fontSize: 18)),
+                  style: Theme.of(context).textTheme.bodyMedium),
               const SizedBox(height: 20),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -238,21 +221,29 @@ class _EditBookingScreenState extends State<EditBookingScreen> {
               const SizedBox(height: 20),
               TextField(
                 controller: _nameController,
-                decoration: const InputDecoration(labelText: 'Name'),
+                decoration: InputDecoration(
+                    labelText: 'Name',
+                    labelStyle: Theme.of(context).textTheme.bodyMedium),
               ),
               TextField(
                 controller: _surnameController,
-                decoration: const InputDecoration(labelText: 'Surname'),
+                decoration: InputDecoration(
+                    labelText: 'Surname',
+                    labelStyle: Theme.of(context).textTheme.bodyMedium),
               ),
               TextField(
                 controller: _phoneController,
                 keyboardType: TextInputType.phone,
-                decoration: const InputDecoration(labelText: 'Tel'),
+                decoration: InputDecoration(
+                    labelText: 'Tel',
+                    labelStyle: Theme.of(context).textTheme.bodyMedium),
               ),
               TextField(
                 controller: _emailController,
                 keyboardType: TextInputType.emailAddress,
-                decoration: const InputDecoration(labelText: 'Email'),
+                decoration: InputDecoration(
+                    labelText: 'Email',
+                    labelStyle: Theme.of(context).textTheme.bodyMedium),
               ),
               const SizedBox(height: 20),
               SizedBox(
@@ -261,10 +252,11 @@ class _EditBookingScreenState extends State<EditBookingScreen> {
                   onPressed: _saveChanges,
                   style: ElevatedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: 15),
-                    backgroundColor: Colors.green,
+                    backgroundColor: Theme.of(context).primaryColor,
+                    foregroundColor: Theme.of(context).colorScheme.onPrimary,
                   ),
                   child: const Text('Save Changes',
-                      style: TextStyle(fontSize: 18, color: Colors.white)),
+                      style: TextStyle(fontSize: 18)),
                 ),
               ),
             ],

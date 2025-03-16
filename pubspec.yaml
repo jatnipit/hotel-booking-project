@@ -42,6 +42,7 @@ dependencies:
   intl: ^0.20.2
   shared_preferences: ^2.0.15
   provider: ^6.0.1
+  flutter_launcher_icons: ^0.14.3
 
 dev_dependencies:
   flutter_test:
@@ -96,3 +97,7 @@ flutter:
   # see https://flutter.dev/to/font-from-package
   assets:
     - assets/logo/
+
+flutter_icons:
+  android: true
+  image_path: "assets/logo/agado_logo_circle.png"

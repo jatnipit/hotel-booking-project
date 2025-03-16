@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:provider/provider.dart';
+import 'package:project/materials/app_colors.dart';
+import 'package:project/materials/theme_notifier.dart';
+import 'package:project/materials/custom_list_tile.dart';
 
 class DeviceSettings extends StatefulWidget {
   final String userId;
@@ -11,140 +14,83 @@ class DeviceSettings extends StatefulWidget {
 }
 
 class _DeviceSettingsState extends State<DeviceSettings> {
-  final TextEditingController _discountCodeController = TextEditingController();
-  String _message = '';
-  bool _isUsed = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _checkIfCodeUsed();
-    // _resetDiscountStatus(); // รีเซ็ตสถานะส่วนลดทุกครั้งที่หน้าโหลด
-  }
-
-  // ฟังก์ชันในการรีเซ็ตสถานะส่วนลด
-  Future<void> _resetDiscountStatus() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    await prefs.setBool('discount_used_${widget.userId}', false);
-    await prefs.setDouble('discountPercentage', 0.0);
-
-    // รีเซ็ตข้อความด้วย
-    setState(() {
-      _message = ''; // เคลียร์ข้อความเมื่อรีเซ็ต
-    });
-  }
-
-  // ตรวจสอบว่าใช้โค้ดส่วนลดแล้วหรือยัง
-  Future<void> _checkIfCodeUsed() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    bool used = prefs.getBool('discount_used_${widget.userId}') ?? false;
-    setState(() {
-      _isUsed = used;
-    });
-  }
-
-  // ฟังก์ชันในการใช้โค้ดส่วนลด
-  Future<void> _applyDiscountCode() async {
-    String enteredCode = _discountCodeController.text.trim();
-
-    if (_isUsed) {
-      setState(() {
-        _message = 'You have already used this discount code.'; // แจ้งว่าผู้ใช้เคยใช้โค้ดแล้ว
-      });
-      return;
-    }
-
-    if (enteredCode.isEmpty) {
-      setState(() {
-        _message = 'Please enter a discount code.'; // แจ้งว่าไม่ได้กรอกโค้ด
-      });
-      return;
-    }
-
-    if (enteredCode == 'DISCOUNT10') {
-      SharedPreferences prefs = await SharedPreferences.getInstance();
-      await prefs.setBool('discount_used_${widget.userId}', true);
-
-      // บันทึกเปอร์เซ็นต์ส่วนลด (เช่น 10%) ใน SharedPreferences
-      await prefs.setDouble('discountPercentage', 0.1); // บันทึกเป็น 10% หรือ 0.1
-
-      setState(() {
-        _message = 'You receive a 10% discount!';
-        _isUsed = true;
-      });
-    } else {
-      setState(() {
-        _message = 'Discount code is incorrect.'; // แจ้งว่าโค้ดไม่ถูกต้อง
-      });
-    }
-  }
-
-  // ฟังก์ชันในการตรวจสอบว่าไม่มีส่วนลดหากไม่ได้กรอกโค้ด
-  Future<void> _checkDiscountStatus() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    double discountPercentage = prefs.getDouble('discountPercentage') ?? 0.0;
-    
-    if (discountPercentage == 0.0) {
-      setState(() {
-        _message = 'No discount applied.';
-      });
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: const Text(
-          'Enter Discount Code',
+          'Settings',
           style: TextStyle(color: Colors.white),
         ),
-        backgroundColor: Colors.blue,
+        backgroundColor: AppColors.primary,
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const SizedBox(height: 10),
-            TextField(
-              controller: _discountCodeController,
-              decoration: const InputDecoration(
-                labelText: 'Enter discount code',
-                border: OutlineInputBorder(),
-              ),
-              enabled: !_isUsed,  // ปิดการกรอกหากใช้โค้ดไปแล้ว
+            const SectionHeader(title: 'Appearance'),
+            CustomListTile(
+              title: 'Theme',
+              leadingIcon: Icons.brightness_6,
+              onTap: () {
+                _showThemeSelectionDialog(context);
+              },
             ),
-            const SizedBox(height: 20),
-            ElevatedButton(
-              onPressed: _isUsed ? null : _applyDiscountCode,
-              style: ElevatedButton.styleFrom(backgroundColor: Colors.blue),
-              child: const Text('Confirm'),
-            ),
-            const SizedBox(height: 20),
-            Text(
-              _message,
-              style: TextStyle(
-                color: _message.contains('incorrect') || _message.contains('already used') ? Colors.red : Colors.green,
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            // ตรวจสอบว่าไม่มีส่วนลดหากไม่ได้กรอกโค้ด
-            ElevatedButton(
-              onPressed: _checkDiscountStatus,
-              style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
-              child: const Text('Check Discount Status'),
-            ),
-            // เพิ่มปุ่มเพื่อรีเซ็ตสถานะส่วนลด
-            // ElevatedButton(
-            //   onPressed: _resetDiscountStatus,
-            //   style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-            //   child: const Text('Reset Discount Status'),
-            // ),
+            // Add other settings here if needed
           ],
         ),
       ),
+    );
+  }
+
+  void _showThemeSelectionDialog(BuildContext context) {
+    final themeNotifier = Provider.of<ThemeNotifier>(context, listen: false);
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Select Theme'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              RadioListTile<ThemeMode>(
+                title: const Text('Light'),
+                value: ThemeMode.light,
+                groupValue: themeNotifier.themeMode,
+                onChanged: (ThemeMode? value) {
+                  if (value != null) {
+                    themeNotifier.setThemeMode(value);
+                    Navigator.of(context).pop();
+                  }
+                },
+              ),
+              RadioListTile<ThemeMode>(
+                title: const Text('Dark'),
+                value: ThemeMode.dark,
+                groupValue: themeNotifier.themeMode,
+                onChanged: (ThemeMode? value) {
+                  if (value != null) {
+                    themeNotifier.setThemeMode(value);
+                    Navigator.of(context).pop();
+                  }
+                },
+              ),
+              RadioListTile<ThemeMode>(
+                title: const Text('System'),
+                value: ThemeMode.system,
+                groupValue: themeNotifier.themeMode,
+                onChanged: (ThemeMode? value) {
+                  if (value != null) {
+                    themeNotifier.setThemeMode(value);
+                    Navigator.of(context).pop();
+                  }
+                },
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 }

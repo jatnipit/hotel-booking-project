@@ -2,9 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:intl/intl.dart';
-import 'package:project/screens/edit_booking_screen.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:project/materials/app_colors.dart';
+import 'package:project/screens/edit_booking_screen.dart';
 
 class ReserveHistory extends StatefulWidget {
   const ReserveHistory({super.key});
@@ -16,58 +15,35 @@ class ReserveHistory extends StatefulWidget {
 class _ReserveHistoryState extends State<ReserveHistory>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
-  double discountPercentage = 0.0; // Default discount percentage is 0%
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
-    _loadDiscount(); // Load discount from SharedPreferences when screen starts
-  }
-
-  // Load discount value from SharedPreferences
-  Future<void> _loadDiscount() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    double savedDiscount = prefs.getDouble('discountPercentage') ?? 0.0;
-    setState(() {
-      discountPercentage = savedDiscount > 0.0 ? savedDiscount : 0.0;
-    });
   }
 
   Future<List<Map<String, dynamic>>> fetchBookings() async {
     User? user = FirebaseAuth.instance.currentUser;
     String? userID = user?.uid;
-
-    if (userID == null) {
-      return [];
-    }
+    if (userID == null) return [];
 
     QuerySnapshot querySnapshot = await FirebaseFirestore.instance
         .collection('bookings')
         .where('userID', isEqualTo: userID)
         .get();
-
     return querySnapshot.docs
         .map((doc) => {'id': doc.id, ...doc.data() as Map<String, dynamic>})
         .toList();
   }
 
-  // Calculate total price taking discount into account.
-  int calculateTotalPrice(String checkIn, String checkOut, int pricePerNight) {
+  int calculateTotalPrice(String checkIn, String checkOut, int pricePerNight,
+      double discountPercentage) {
     DateTime checkInDate = DateTime.parse(checkIn);
     DateTime checkOutDate = DateTime.parse(checkOut);
     int nights = checkOutDate.difference(checkInDate).inDays;
-
-    // Full price before discount
     int totalPrice = nights * pricePerNight;
-
-    // Calculate discount amount
     double discountAmount = totalPrice * discountPercentage;
-
-    // Calculate final price after discount
-    double finalPrice = totalPrice - discountAmount;
-
-    return finalPrice.round(); // Rounded to an integer
+    return (totalPrice - discountAmount).round();
   }
 
   int calculateNights(String checkIn, String checkOut) {
@@ -76,73 +52,53 @@ class _ReserveHistoryState extends State<ReserveHistory>
     return checkOutDate.difference(checkInDate).inDays;
   }
 
-  // Cancel a booking by updating the booking document
   Future<void> cancelBooking(String bookingId) async {
-    // Show confirmation dialog before cancelling
     showDialog(
       context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Confirm Cancellation'),
-          content: const Text('Are you sure you want to cancel this trip?'),
-          actions: [
-            TextButton(
-              child: const Text('No'),
-              onPressed: () {
-                Navigator.of(context).pop(); // Dismiss the dialog
-              },
-            ),
-            TextButton(
-              child: const Text('Yes'),
-              onPressed: () async {
-                try {
-                  await FirebaseFirestore.instance
-                      .collection('bookings')
-                      .doc(bookingId)
-                      .update({'isCancelled': true});
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Booking cancelled')),
-                  );
-                  setState(() {});
-                } catch (e) {
-                  print('Error cancelling booking: $e');
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Error cancelling booking.')),
-                  );
-                }
-                Navigator.of(context).pop(); // Dismiss the dialog after action
-              },
-            ),
-          ],
-        );
-      },
+      builder: (context) => AlertDialog(
+        title: const Text('Confirm Cancellation'),
+        content: const Text('Are you sure you want to cancel this trip?'),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('No')),
+          TextButton(
+            onPressed: () async {
+              try {
+                await FirebaseFirestore.instance
+                    .collection('bookings')
+                    .doc(bookingId)
+                    .update({'isCancelled': true});
+                ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Booking cancelled')));
+                setState(() {});
+              } catch (e) {
+                print('Error cancelling booking: $e');
+                ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Error cancelling booking.')));
+              }
+              Navigator.of(context).pop();
+            },
+            child: const Text('Yes'),
+          ),
+        ],
+      ),
     );
   }
 
-  // Return a string indicating if a booking is editable, cancelled, or completed.
   String getRemainingTime(
       Timestamp? bookingTimestamp, bool isCancelled, bool isPast) {
-    if (isCancelled) {
-      return 'Cancelled';
-    }
-    if (isPast) {
-      return 'Completed';
-    }
+    if (isCancelled) return 'Cancelled';
+    if (isPast) return 'Completed';
     if (bookingTimestamp == null) return 'Not editable';
     DateTime bookingTime = bookingTimestamp.toDate();
     DateTime expirationTime = bookingTime.add(const Duration(minutes: 15));
     DateTime now = DateTime.now();
-
-    if (now.isBefore(expirationTime)) {
-      String formattedTime =
-          DateFormat('HH:mm dd MMM yyyy').format(expirationTime);
-      return 'Editable until $formattedTime';
-    } else {
-      return 'Uneditable';
-    }
+    return now.isBefore(expirationTime)
+        ? 'Editable until ${DateFormat('HH:mm dd MMM yyyy').format(expirationTime)}'
+        : 'Uneditable';
   }
 
-  // Build a list of bookings based on the type (active, past, or cancelled)
   Widget buildBookingList(List<Map<String, dynamic>> bookings, String tabType) {
     if (bookings.isEmpty) {
       String message = tabType == 'active'
@@ -150,7 +106,8 @@ class _ReserveHistoryState extends State<ReserveHistory>
           : tabType == 'past'
               ? 'No past bookings.'
               : 'No cancelled bookings.';
-      return Center(child: Text(message));
+      return Center(
+          child: Text(message, style: Theme.of(context).textTheme.bodyMedium));
     }
 
     return ListView.builder(
@@ -158,14 +115,16 @@ class _ReserveHistoryState extends State<ReserveHistory>
       itemCount: bookings.length,
       itemBuilder: (context, index) {
         var booking = bookings[index];
+        double discountPercentage =
+            booking['discountPercentage']?.toDouble() ?? 0.0;
         int totalPrice = calculateTotalPrice(
           booking['checkInDate'],
           booking['checkOutDate'],
           int.parse(booking['pricePerNight'].toString()),
+          discountPercentage,
         );
         int nights =
             calculateNights(booking['checkInDate'], booking['checkOutDate']);
-
         Timestamp? bookingTimestamp = booking['bookingTime'];
         bool isPast =
             DateTime.parse(booking['checkOutDate']).isBefore(DateTime.now());
@@ -179,34 +138,36 @@ class _ReserveHistoryState extends State<ReserveHistory>
         return Card(
           margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 10),
           elevation: 5,
-          color: Colors.white,
+          color: Theme.of(context).colorScheme.surface,
           shape:
               RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           child: Stack(
             children: [
               ListTile(
-                title: Text(
-                  booking['roomName'] ?? 'Unknown Room',
-                  style: const TextStyle(fontWeight: FontWeight.bold),
-                ),
+                title: Text(booking['roomName'] ?? 'Unknown Room',
+                    style: TextStyle(fontSize: 20)),
                 subtitle: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Name: ${booking['name']} ${booking['surname']}'),
+                    Text('Name: ${booking['name']} ${booking['surname']}',
+                        style: Theme.of(context).textTheme.bodyMedium),
                     Text(
-                        'Check-in: ${DateFormat('dd MMM yyyy').format(DateTime.parse(booking['checkInDate']))}'),
+                        'Check-in: ${DateFormat('dd MMM yyyy').format(DateTime.parse(booking['checkInDate']))}',
+                        style: Theme.of(context).textTheme.bodyMedium),
                     Text(
-                        'Check-out: ${DateFormat('dd MMM yyyy').format(DateTime.parse(booking['checkOutDate']))}'),
-                    Text('Price/Night: ${booking['pricePerNight']} ฿'),
+                        'Check-out: ${DateFormat('dd MMM yyyy').format(DateTime.parse(booking['checkOutDate']))}',
+                        style: Theme.of(context).textTheme.bodyMedium),
+                    Text('Price/Night: ${booking['pricePerNight']} ฿',
+                        style: Theme.of(context).textTheme.bodyMedium),
                     Text(
                       'Total Price: $totalPrice ฿',
-                      style: const TextStyle(
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                           fontWeight: FontWeight.bold, color: Colors.green),
                     ),
                     if (discountPercentage > 0)
                       Text(
-                        'Discount: ${discountPercentage * 100}%',
-                        style: const TextStyle(
+                        'Discount: ${discountPercentage * 100}% applied',
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                             color: Colors.red, fontWeight: FontWeight.bold),
                       ),
                     Text(
@@ -227,16 +188,14 @@ class _ReserveHistoryState extends State<ReserveHistory>
                   children: [
                     if (canEdit) ...[
                       IconButton(
-                        icon: const Icon(Icons.edit, color: Colors.blue),
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) =>
-                                  EditBookingScreen(booking: booking),
-                            ),
-                          ).then((_) => setState(() {}));
-                        },
+                        icon: Icon(Icons.edit,
+                            color: Theme.of(context).iconTheme.color),
+                        onPressed: () => Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                    builder: (context) =>
+                                        EditBookingScreen(booking: booking)))
+                            .then((_) => setState(() {})),
                       ),
                       IconButton(
                         icon: const Icon(Icons.cancel, color: Colors.red),
@@ -251,10 +210,10 @@ class _ReserveHistoryState extends State<ReserveHistory>
                 right: 12,
                 child: Text(
                   '$nights night${nights != 1 ? 's' : ''}',
-                  style: const TextStyle(
-                      fontSize: 14,
-                      color: Colors.black54,
-                      fontWeight: FontWeight.bold),
+                  style: Theme.of(context)
+                      .textTheme
+                      .bodySmall
+                      ?.copyWith(fontWeight: FontWeight.bold),
                 ),
               ),
             ],
@@ -267,9 +226,9 @@ class _ReserveHistoryState extends State<ReserveHistory>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: Column(
         children: [
-          // Custom Tab Buttons
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
             child: Row(
@@ -279,7 +238,7 @@ class _ReserveHistoryState extends State<ReserveHistory>
                   InkWell(
                     onTap: () {
                       _tabController.animateTo(i);
-                      setState(() {}); // Rebuild to update tab appearance
+                      setState(() {});
                     },
                     child: Container(
                       padding: const EdgeInsets.symmetric(
@@ -287,13 +246,13 @@ class _ReserveHistoryState extends State<ReserveHistory>
                       decoration: BoxDecoration(
                         color: _tabController.index == i
                             ? AppColors.secondary
-                            : Colors.white,
+                            : Theme.of(context).colorScheme.surface,
                         borderRadius: BorderRadius.circular(20),
                       ),
                       child: Text(
                         ['Active', 'Past', 'Cancelled'][i],
                         style: TextStyle(
-                          color: Colors.black,
+                          color: Theme.of(context).textTheme.bodyMedium?.color,
                           fontWeight: _tabController.index == i
                               ? FontWeight.bold
                               : FontWeight.normal,
@@ -304,7 +263,6 @@ class _ReserveHistoryState extends State<ReserveHistory>
               ],
             ),
           ),
-          // Tab Content
           Expanded(
             child: FutureBuilder<List<Map<String, dynamic>>>(
               future: fetchBookings(),
@@ -316,11 +274,9 @@ class _ReserveHistoryState extends State<ReserveHistory>
                   return Center(child: Text('Error: ${snapshot.error}'));
                 }
                 var allBookings = snapshot.data ?? [];
-
                 return TabBarView(
                   controller: _tabController,
                   children: [
-                    // Active bookings
                     buildBookingList(
                       allBookings
                           .where((b) =>
@@ -330,7 +286,6 @@ class _ReserveHistoryState extends State<ReserveHistory>
                           .toList(),
                       'active',
                     ),
-                    // Past bookings
                     buildBookingList(
                       allBookings
                           .where((b) =>
@@ -340,13 +295,11 @@ class _ReserveHistoryState extends State<ReserveHistory>
                           .toList(),
                       'past',
                     ),
-                    // Cancelled bookings
                     buildBookingList(
-                      allBookings
-                          .where((b) => b['isCancelled'] ?? false)
-                          .toList(),
-                      'cancelled',
-                    ),
+                        allBookings
+                            .where((b) => b['isCancelled'] ?? false)
+                            .toList(),
+                        'cancelled'),
                   ],
                 );
               },

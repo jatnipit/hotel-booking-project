@@ -2,24 +2,33 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:project/materials/app_colors.dart';
 import 'package:project/screens/home_screen.dart';
 import 'package:project/screens/reserve_history.dart';
 import 'package:project/screens/user_profile_screen.dart';
-import 'package:project/materials/theme.dart';
+import 'package:project/materials/app_theme.dart';
+import 'package:project/materials/theme_notifier.dart';
+import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
-
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp();
-  runApp(MaterialApp(
-    debugShowCheckedModeBanner: false,
-    home: MyApp(),
-    theme: AppTheme.lightTheme,
-    darkTheme: AppTheme.darkTheme,
-    themeMode: ThemeMode.system,
-  ));
+  runApp(
+    ChangeNotifierProvider(
+      create: (_) => ThemeNotifier(),
+      child: Consumer<ThemeNotifier>(
+        builder: (context, themeNotifier, child) {
+          return MaterialApp(
+            debugShowCheckedModeBanner: false,
+            theme: AppTheme.lightTheme,
+            darkTheme: AppTheme.darkTheme,
+            themeMode: themeNotifier.themeMode,
+            home: const MyApp(),
+          );
+        },
+      ),
+    ),
+  );
 }
 
 class MyApp extends StatefulWidget {
@@ -31,7 +40,7 @@ class MyApp extends StatefulWidget {
 
 class _MyAppState extends State<MyApp> {
   int screenIndex = 0;
-  String? formattedName; 
+  String? formattedName;
   final screens = [HomeScreen(), ReserveHistory(), UserProfileScreen()];
 
   @override
@@ -39,6 +48,7 @@ class _MyAppState extends State<MyApp> {
     super.initState();
     _fetchUserName();
   }
+
   Future<void> _fetchUserName() async {
     User? user = FirebaseAuth.instance.currentUser;
     if (user != null) {
@@ -48,38 +58,28 @@ class _MyAppState extends State<MyApp> {
             .doc(user.uid)
             .get();
         if (doc.exists) {
-          String fullName =
-              doc.get('name'); 
+          String fullName = doc.get('name');
           List<String> nameParts = fullName.split(' ');
-          if (nameParts.length >= 2) {
-            String firstName = nameParts[0];
-            String lastInitial = nameParts[1][0];
-            setState(() {
-              formattedName = '$firstName$lastInitial';
-            });
-          } else {
-            setState(() {
-              formattedName = fullName;
-            });
-          }
+          setState(() {
+            formattedName = nameParts.length >= 2
+                ? '${nameParts[0]}${nameParts[1][0]}'
+                : fullName;
+          });
         }
       } catch (e) {
         print('Error fetching user name: $e');
         setState(() {
-          formattedName = FirebaseAuth.instance.currentUser?.email ?? 'Guest';
+          formattedName = user.email ?? 'Guest';
         });
       }
     }
   }
+
   List<String> get titles {
     String profileTitle = formattedName != null
         ? 'Hello, $formattedName'
         : 'Hello, ${FirebaseAuth.instance.currentUser?.email ?? 'Guest'}';
-    return [
-      'Agado',
-      'Trip',
-      profileTitle,
-    ];
+    return ['Agado', 'Trip', profileTitle];
   }
 
   @override
@@ -99,7 +99,8 @@ class _MyAppState extends State<MyApp> {
                                   FirebaseAuth.instance.currentUser!.photoURL!)
                               : null,
                       child: FirebaseAuth.instance.currentUser?.photoURL == null
-                          ? const Icon(Icons.person)
+                          ? Icon(Icons.person,
+                              color: Theme.of(context).iconTheme.color)
                           : null,
                     ),
                   )
@@ -111,41 +112,32 @@ class _MyAppState extends State<MyApp> {
                     ? GoogleFonts.lobster(
                         fontSize: 32,
                         fontWeight: FontWeight.bold,
+                        color:
+                            Theme.of(context).appBarTheme.titleTextStyle?.color,
                       )
-                    : const TextStyle(fontSize: 20),
+                    : Theme.of(context).appBarTheme.titleTextStyle,
               ),
             ),
-            actions: const [
+            actions: [
               Icon(Icons.notifications_outlined, color: Colors.white),
-              SizedBox(width: 15),
+              const SizedBox(width: 15),
             ],
-            backgroundColor: AppColors.primary,
+            backgroundColor: Theme.of(context).primaryColor,
           ),
           body: screens[screenIndex],
-          backgroundColor: Colors.white,
+          backgroundColor: Theme.of(context).scaffoldBackgroundColor,
           bottomNavigationBar: Container(
             height: 70,
-            decoration: const BoxDecoration(
-              borderRadius: BorderRadius.zero,
-              color: AppColors.primary,
-            ),
+            color: Theme.of(context).primaryColor,
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
                 GestureDetector(
-                  onTap: () {
-                    setState(() {
-                      screenIndex = 0;
-                    });
-                  },
-                  child: const Icon(Icons.home_outlined, color: Colors.white),
+                  onTap: () => setState(() => screenIndex = 0),
+                  child: Icon(Icons.home_outlined, color: Colors.white),
                 ),
                 GestureDetector(
-                  onTap: () {
-                    setState(() {
-                      screenIndex = 1;
-                    });
-                  },
+                  onTap: () => setState(() => screenIndex = 1),
                   child: Image.asset(
                     'assets/logo/trip.png',
                     color: Colors.white,
@@ -153,12 +145,8 @@ class _MyAppState extends State<MyApp> {
                   ),
                 ),
                 GestureDetector(
-                  onTap: () {
-                    setState(() {
-                      screenIndex = 2;
-                    });
-                  },
-                  child: const Icon(Icons.person_outline, color: Colors.white),
+                  onTap: () => setState(() => screenIndex = 2),
+                  child: Icon(Icons.person_outline, color: Colors.white),
                 ),
               ],
             ),

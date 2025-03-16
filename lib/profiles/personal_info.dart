@@ -1,11 +1,9 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:project/materials/app_colors.dart';
 
 class PersonalInfo extends StatefulWidget {
-  final String userId; // Unique identifier for the user
-
+  final String userId;
   const PersonalInfo({super.key, required this.userId});
 
   @override
@@ -13,27 +11,21 @@ class PersonalInfo extends StatefulWidget {
 }
 
 class _PersonalInfoState extends State<PersonalInfo> {
-  // State variables to hold fetched data
   String? name;
   String? gender;
   DateTime? birthday;
   String? email;
   String? phoneNumber;
-
-  // Firestore instance
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-
-  // Reference to the user's document
   late DocumentReference _userDoc;
 
   @override
   void initState() {
     super.initState();
     _userDoc = _firestore.collection('users').doc(widget.userId);
-    _fetchUserData(); // Fetch data when the widget initializes
+    _fetchUserData();
   }
 
-  // Fetch user data from Firestore
   Future<void> _fetchUserData() async {
     try {
       DocumentSnapshot doc = await _userDoc.get();
@@ -42,93 +34,75 @@ class _PersonalInfoState extends State<PersonalInfo> {
         setState(() {
           name = data['name'];
           gender = data['gender'];
-          if (data['birthday'] != null) {
+          if (data['birthday'] != null)
             birthday = (data['birthday'] as Timestamp).toDate();
-          }
           email = data['email'];
           phoneNumber = data['phoneNumber'];
         });
       }
     } catch (e) {
       print('Error fetching user data: $e');
-      // Optionally show a snackbar or dialog to the user
     }
   }
 
-  // Show dialog to edit text fields
   void _showTextEditDialog(
       String title, String? currentValue, Function(String) onSave) {
     TextEditingController controller =
         TextEditingController(text: currentValue);
     showDialog(
       context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: Text(title),
-          content: TextField(
-            controller: controller,
-            decoration: InputDecoration(hintText: 'Enter $title'),
-          ),
-          actions: [
-            TextButton(
+      builder: (context) => AlertDialog(
+        title: Text(title),
+        content: TextField(
+          controller: controller,
+          decoration: InputDecoration(hintText: 'Enter $title'),
+        ),
+        actions: [
+          TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text('Cancel'),
-            ),
-            TextButton(
-              onPressed: () {
-                onSave(controller.text);
-                Navigator.pop(context);
-              },
-              child: const Text('Save'),
-            ),
-          ],
-        );
-      },
+              child: const Text('Cancel')),
+          TextButton(
+            onPressed: () {
+              onSave(controller.text);
+              Navigator.pop(context);
+            },
+            child: const Text('Save'),
+          ),
+        ],
+      ),
     );
   }
 
-  // Show dialog to select gender
   void _showGenderSelectionDialog() {
     String? selectedGender = gender;
     showDialog(
       context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: const Text('Select Gender'),
-          content: DropdownButton<String>(
-            value: selectedGender,
-            items: ['Male', 'Female', 'Other'].map((String value) {
-              return DropdownMenuItem<String>(
-                value: value,
-                child: Text(value),
-              );
-            }).toList(),
-            onChanged: (value) {
-              selectedGender = value;
-            },
-          ),
-          actions: [
-            TextButton(
+      builder: (context) => AlertDialog(
+        title: const Text('Select Gender'),
+        content: DropdownButton<String>(
+          value: selectedGender,
+          items: ['Male', 'Female', 'Other'].map((String value) {
+            return DropdownMenuItem<String>(value: value, child: Text(value));
+          }).toList(),
+          onChanged: (value) => selectedGender = value,
+        ),
+        actions: [
+          TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text('Cancel'),
-            ),
-            TextButton(
-              onPressed: () {
-                setState(() {
-                  gender = selectedGender;
-                });
-                _updateField('gender', selectedGender);
-                Navigator.pop(context);
-              },
-              child: const Text('Save'),
-            ),
-          ],
-        );
-      },
+              child: const Text('Cancel')),
+          TextButton(
+            onPressed: () {
+              setState(() => gender = selectedGender);
+              _updateField('gender', selectedGender);
+              Navigator.pop(context);
+            },
+            child: const Text('Save'),
+          ),
+        ],
+      ),
     );
   }
 
-  // Update a field in Firestore
   Future<void> _updateField(String field, dynamic value) async {
     try {
       await _userDoc.set({field: value}, SetOptions(merge: true));
@@ -141,10 +115,10 @@ class _PersonalInfoState extends State<PersonalInfo> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Personal Information',
-            style: TextStyle(color: Colors.white)),
-        backgroundColor: AppColors.primary,
+        title: const Text('Personal Information'),
+        backgroundColor: Theme.of(context).primaryColor,
       ),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
@@ -152,12 +126,10 @@ class _PersonalInfoState extends State<PersonalInfo> {
             label: 'Name',
             data: name,
             placeholder: 'Enter your name',
-            onTap: () {
-              _showTextEditDialog('Edit Name', name, (newValue) {
-                setState(() => name = newValue);
-                _updateField('name', newValue);
-              });
-            },
+            onTap: () => _showTextEditDialog('Edit Name', name, (newValue) {
+              setState(() => name = newValue);
+              _updateField('name', newValue);
+            }),
           ),
           const SizedBox(height: 10),
           InfoListTile(
@@ -191,24 +163,21 @@ class _PersonalInfoState extends State<PersonalInfo> {
             label: 'Email',
             data: email,
             placeholder: 'Enter your email',
-            onTap: () {
-              _showTextEditDialog('Edit Email', email, (newValue) {
-                setState(() => email = newValue);
-                _updateField('email', newValue);
-              });
-            },
+            onTap: () => _showTextEditDialog('Edit Email', email, (newValue) {
+              setState(() => email = newValue);
+              _updateField('email', newValue);
+            }),
           ),
           const SizedBox(height: 10),
           InfoListTile(
             label: 'Phone number',
             data: phoneNumber,
             placeholder: 'Add your phone number',
-            onTap: () {
-              _showTextEditDialog('Edit Phone Number', phoneNumber, (newValue) {
-                setState(() => phoneNumber = newValue);
-                _updateField('phoneNumber', newValue);
-              });
-            },
+            onTap: () => _showTextEditDialog('Edit Phone Number', phoneNumber,
+                (newValue) {
+              setState(() => phoneNumber = newValue);
+              _updateField('phoneNumber', newValue);
+            }),
           ),
         ],
       ),
@@ -216,20 +185,18 @@ class _PersonalInfoState extends State<PersonalInfo> {
   }
 }
 
-// Custom widget for displaying info fields
 class InfoListTile extends StatelessWidget {
   final String label;
   final String? data;
   final String placeholder;
   final VoidCallback? onTap;
 
-  const InfoListTile({
-    super.key,
-    required this.label,
-    required this.placeholder,
-    this.data,
-    this.onTap,
-  });
+  const InfoListTile(
+      {super.key,
+      required this.label,
+      required this.placeholder,
+      this.data,
+      this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -239,7 +206,7 @@ class InfoListTile extends StatelessWidget {
       color: Colors.white,
       child: InkWell(
         onTap: onTap,
-        splashColor: Colors.grey.shade200,
+        splashColor: Theme.of(context).splashColor,
         child: Padding(
           padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
           child: Row(
@@ -248,15 +215,14 @@ class InfoListTile extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      label,
-                      style: const TextStyle(fontSize: 16),
-                    ),
+                    Text(label, style: Theme.of(context).textTheme.bodyLarge),
                     const SizedBox(height: 4),
                     Text(
                       hasData ? data! : placeholder,
                       style: TextStyle(
-                        color: hasData ? Colors.black : Colors.grey,
+                        color: hasData
+                            ? Theme.of(context).textTheme.bodyMedium?.color
+                            : Colors.grey,
                         fontSize: 17,
                         fontWeight: hasData ? FontWeight.bold : null,
                       ),
@@ -264,7 +230,8 @@ class InfoListTile extends StatelessWidget {
                   ],
                 ),
               ),
-              const Icon(Icons.arrow_forward_ios, size: 16),
+              Icon(Icons.arrow_forward_ios,
+                  size: 16, color: Theme.of(context).iconTheme.color),
             ],
           ),
         ),
