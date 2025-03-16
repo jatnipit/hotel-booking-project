@@ -3,6 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:intl/intl.dart';
 import 'package:project/screens/edit_booking_screen.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class ReserveHistory extends StatefulWidget {
   const ReserveHistory({super.key});
@@ -12,6 +13,26 @@ class ReserveHistory extends StatefulWidget {
 }
 
 class _ReserveHistoryState extends State<ReserveHistory> {
+  double discountPercentage = 0.0; // ค่าเริ่มต้นของส่วนลดเป็น 0%
+
+  // ฟังก์ชันในการดึงค่าส่วนลดจาก SharedPreferences
+  Future<void> _loadDiscount() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    // ตรวจสอบว่าไม่มีการบันทึกส่วนลดใน SharedPreferences หรือยังไม่ได้กรอกโค้ด
+    double savedDiscount = prefs.getDouble('discountPercentage') ?? 0.0;
+
+    setState(() {
+      // หากไม่พบส่วนลด (หรือยังไม่ได้กรอกโค้ด) จะตั้งเป็น 0.0
+      discountPercentage = savedDiscount > 0.0 ? savedDiscount : 0.0;
+    });
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _loadDiscount(); // โหลดส่วนลดเมื่อเริ่มหน้าจอ
+  }
+
   Future<List<Map<String, dynamic>>> fetchBookings() async {
     User? user = FirebaseAuth.instance.currentUser;
     String? userID = user?.uid;
@@ -34,7 +55,17 @@ class _ReserveHistoryState extends State<ReserveHistory> {
     DateTime checkInDate = DateTime.parse(checkIn);
     DateTime checkOutDate = DateTime.parse(checkOut);
     int nights = checkOutDate.difference(checkInDate).inDays;
-    return nights * pricePerNight;
+
+    // คำนวณราคาเต็มก่อนหักส่วนลด
+    int totalPrice = nights * pricePerNight;
+
+    // คำนวณส่วนลด
+    double discountAmount = totalPrice * discountPercentage;
+
+    // คำนวณราคาใหม่หลังหักส่วนลด
+    double finalPrice = totalPrice - discountAmount;
+
+    return finalPrice.round();  // ปัดเศษเพื่อให้เป็นจำนวนเต็ม
   }
 
   int calculateNights(String checkIn, String checkOut) {
@@ -76,7 +107,7 @@ class _ReserveHistoryState extends State<ReserveHistory> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: FutureBuilder<List<Map<String, dynamic>>>(
+      body: FutureBuilder<List<Map<String, dynamic>>>( 
         future: fetchBookings(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
@@ -131,19 +162,25 @@ class _ReserveHistoryState extends State<ReserveHistory> {
                       subtitle: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
-                              'Name: ${booking['name']} ${booking['surname']}'),
-                          Text(
-                              'Check-in: ${DateFormat('dd MMM yyyy').format(DateTime.parse(booking['checkInDate']))}'),
-                          Text(
-                              'Check-out: ${DateFormat('dd MMM yyyy').format(DateTime.parse(booking['checkOutDate']))}'),
+                          Text('Name: ${booking['name']} ${booking['surname']}'),
+                          Text('Check-in: ${DateFormat('dd MMM yyyy').format(DateTime.parse(booking['checkInDate']))}'),
+                          Text('Check-out: ${DateFormat('dd MMM yyyy').format(DateTime.parse(booking['checkOutDate']))}'),
                           Text('Price/Night: ${booking['pricePerNight']} ฿'),
+                          // แสดงราคาหลังหักส่วนลด
                           Text(
-                            'Total Price: $totalPrice ฿',
+                            'Total Price : $totalPrice ฿',
                             style: const TextStyle(
                                 fontWeight: FontWeight.bold,
                                 color: Colors.green),
                           ),
+                          if (discountPercentage > 0)
+                            Text(
+                              'Discount: ${discountPercentage * 100}%',
+                              style: const TextStyle(
+                                color: Colors.red,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
                           Text(
                             remainingTime,
                             style: TextStyle(

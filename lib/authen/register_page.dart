@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:project/main.dart'; // Import MyApp here
+import 'package:shared_preferences/shared_preferences.dart'; // Import SharedPreferences
 
 class RegisterPage extends StatefulWidget {
   const RegisterPage({super.key});
@@ -18,6 +19,15 @@ class _RegisterPageState extends State<RegisterPage> {
   final emailController = TextEditingController();
   final passwordController = TextEditingController();
   final confirmPasswordController = TextEditingController();
+
+  // ฟังก์ชันรีเซ็ตข้อมูลที่ต้องการหลังจากสมัคร
+  Future<void> resetUserState() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    // รีเซ็ตข้อมูลที่ต้องการ เช่น รีเซ็ตส่วนลด
+    await prefs.setDouble('discountPercentage', 0.0); // รีเซ็ตส่วนลด
+    await prefs.remove('discount_used_${FirebaseAuth.instance.currentUser?.uid}'); // ลบข้อมูลส่วนลดที่เคยใช้
+    // เพิ่มการรีเซ็ตข้อมูลอื่น ๆ ที่คุณต้องการ
+  }
 
   Future<void> signUserUp() async {
     if (!_formKey.currentState!.validate()) return;
@@ -62,6 +72,9 @@ class _RegisterPageState extends State<RegisterPage> {
         'name': name,
         'email': emailController.text.trim(),
       });
+
+      // เรียกใช้ฟังก์ชันรีเซ็ตข้อมูลหลังจากสมัครสำเร็จ
+      await resetUserState();
 
       if (mounted) {
         Navigator.pop(context);

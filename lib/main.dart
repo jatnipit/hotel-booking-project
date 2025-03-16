@@ -1,12 +1,13 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart'; // Added Firestore import
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:project/materials/app_colors.dart';
 import 'package:project/screens/home_screen.dart';
 import 'package:project/screens/reserve_history.dart';
 import 'package:project/screens/user_profile_screen.dart';
 import 'package:project/materials/theme.dart';
+
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -29,16 +30,14 @@ class MyApp extends StatefulWidget {
 
 class _MyAppState extends State<MyApp> {
   int screenIndex = 0;
-  String? formattedName; // State variable to hold the formatted name
+  String? formattedName; 
   final screens = [HomeScreen(), ReserveHistory(), UserProfileScreen()];
 
   @override
   void initState() {
     super.initState();
-    _fetchUserName(); // Fetch the name when the widget initializes
+    _fetchUserName();
   }
-
-  // Method to fetch and format the user's name from Firestore
   Future<void> _fetchUserName() async {
     User? user = FirebaseAuth.instance.currentUser;
     if (user != null) {
@@ -49,17 +48,17 @@ class _MyAppState extends State<MyApp> {
             .get();
         if (doc.exists) {
           String fullName =
-              doc.get('name'); // Assumes 'name' field in Firestore
+              doc.get('name'); 
           List<String> nameParts = fullName.split(' ');
           if (nameParts.length >= 2) {
             String firstName = nameParts[0];
             String lastInitial = nameParts[1][0];
             setState(() {
-              formattedName = '$firstName$lastInitial'; // e.g., "JohnD"
+              formattedName = '$firstName$lastInitial';
             });
           } else {
             setState(() {
-              formattedName = fullName; // Fallback if no last name
+              formattedName = fullName;
             });
           }
         }
@@ -71,8 +70,6 @@ class _MyAppState extends State<MyApp> {
       }
     }
   }
-
-  // Updated titles getter to use the formatted name
   List<String> get titles {
     String profileTitle = formattedName != null
         ? 'Hello, $formattedName'
@@ -80,7 +77,7 @@ class _MyAppState extends State<MyApp> {
     return [
       'ชื่อโปรเจคเจ๋งๆ By แบงค์',
       'Trip',
-      profileTitle, // Use formatted name for UserProfileScreen
+      profileTitle,
     ];
   }
 
