@@ -100,7 +100,8 @@ class _DetailScreenState extends State<DetailScreen> {
         'checkOutDate': checkOutDate?.toString(),
         'roomName': widget.roomData['name'],
         'pricePerNight': widget.roomData['pricePerNight'],
-        'bookingTime': FieldValue.serverTimestamp(), // Added server timestamp
+        'bookingTime': FieldValue.serverTimestamp(),
+        'isCancelled': false, // Ensure every new booking is not cancelled
       });
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Book success.')),
