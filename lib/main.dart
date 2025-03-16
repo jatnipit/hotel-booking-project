@@ -7,6 +7,7 @@ import 'package:project/screens/home_screen.dart';
 import 'package:project/screens/reserve_history.dart';
 import 'package:project/screens/user_profile_screen.dart';
 import 'package:project/materials/theme.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -78,7 +79,7 @@ class _MyAppState extends State<MyApp> {
         ? 'Hello, $formattedName'
         : 'Hello, ${FirebaseAuth.instance.currentUser?.email ?? 'Guest'}';
     return [
-      'ชื่อโปรเจคเจ๋งๆ By แบงค์',
+      'Agado',
       'Trip',
       profileTitle, // Use formatted name for UserProfileScreen
     ];
@@ -109,7 +110,12 @@ class _MyAppState extends State<MyApp> {
             title: Center(
               child: Text(
                 titles[screenIndex],
-                style: const TextStyle(color: Colors.white),
+                style: screenIndex == 0
+                    ? GoogleFonts.lobster(
+                        fontSize: 32,
+                        fontWeight: FontWeight.bold,
+                      )
+                    : const TextStyle(fontSize: 20),
               ),
             ),
             actions: const [
