@@ -1,16 +1,7 @@
-# project
+# Agado Project
 
-A new Flutter project.
+A hotel booking app developed with Flutter for Mobile Application Design and Development courses.
 
-## Getting Started
+## Video Showcase
 
-This project is a starting point for a Flutter application.
-
-A few resources to get you started if this is your first Flutter project:
-
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
-
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+A video showcase for Agado app [click.](https://drive.google.com/file/d/1k8JA2hD2kKEIEqmNr6c4b9GW6zYO0B16/view?usp=sharing)
